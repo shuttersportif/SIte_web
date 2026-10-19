@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import NavLink from "./NavLink";
 
 export const DEFAULT_ITEMS = [
   {
@@ -78,14 +79,14 @@ export default function LatestAddedCard({ items = DEFAULT_ITEMS, onHoverChange, 
         transition: `transform ${ENTRANCE_MS}ms cubic-bezier(.16,1,.3,1)`,
       }}
     >
-      <a
-        href={current ? `/galerie` : undefined}
+      <NavLink
+        href="/galerie"
         aria-label={current ? `Voir la galerie ${current.nom}` : undefined}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
         onFocus={handleEnter}
         onBlur={handleLeave}
-        className="flex w-[280px] flex-col gap-1.5 border p-1.5 text-paper transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98] sm:w-[340px] md:w-[380px]"
+        className="flex w-[280px] flex-col gap-1.5 border p-1.5 text-paper transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98] sm:w-[340px] md:w-[380px] [@media(max-height:680px)]:w-[250px] [@media(max-height:500px)]:w-[180px]"
         style={{
           background: "rgba(20,20,20,0.32)",
           backdropFilter: "blur(18px)",
@@ -181,7 +182,7 @@ export default function LatestAddedCard({ items = DEFAULT_ITEMS, onHoverChange, 
           ))}
         </span>
       </span>
-      </a>
+      </NavLink>
     </span>
   );
 }

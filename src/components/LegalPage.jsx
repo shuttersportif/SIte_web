@@ -1,7 +1,19 @@
 import LegalTabs from "./LegalTabs";
 import Reveal from "./Reveal";
 
-export default function LegalPage({ title, intro, sections }) {
+const MOIS = [
+  "janvier", "février", "mars", "avril", "mai", "juin",
+  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+];
+
+function formatDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return `${d} ${MOIS[m - 1]} ${y}`;
+}
+
+export default function LegalPage({ title, intro, lastUpdated, sections }) {
   return (
     <div className="min-h-[calc(100dvh-56px)] bg-paper text-[#111111]">
       <LegalTabs />
@@ -10,12 +22,15 @@ export default function LegalPage({ title, intro, sections }) {
         <Reveal index={0}>
           <h1 className="m-0 text-[32px] font-medium tracking-[-0.03em]">{title}</h1>
           <span aria-hidden="true" className="mt-3 block h-0.5 w-10 bg-accent" />
-          {intro && <p className="mt-5 max-w-[70ch] text-[13px] text-black/60">{intro}</p>}
+          {lastUpdated && (
+            <p className="mt-4 text-xs text-black/50">Dernière mise à jour : {formatDate(lastUpdated)}</p>
+          )}
+          {intro && <p className="mt-2 max-w-[70ch] text-[13px] text-black/60">{intro}</p>}
         </Reveal>
 
         <div className="mt-10 flex max-w-[70ch] flex-col gap-8">
           {sections.map((section, i) => (
-            <Reveal key={section.heading} as="section" index={i + 1}>
+            <Reveal key={`${section.heading}-${i}`} as="section" index={i + 1}>
               <h2 className="m-0 text-[15px] font-medium">{section.heading}</h2>
               <div className="mt-2 flex flex-col gap-2 text-[14px] leading-relaxed text-black/80">
                 {section.paragraphs.map((p, j) => (

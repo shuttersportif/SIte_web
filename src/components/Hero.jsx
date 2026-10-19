@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import LatestAddedCard, { DEFAULT_ITEMS } from "./LatestAddedCard";
+import NavLink from "./NavLink";
 
 const SWEEP_DURATION_MS = 300;
 const ENTRANCE_MS = 260;
 const TEXT_START_MS = 70; // démarre bien avant la fin de l'entrée
 
-function GalleryCta({ style }) {
+function GalleryCta({ style, label }) {
   // 'idle' = planqué à gauche (prêt) | 'in' = entrée en cours | 'out' = sortie en cours
   const [phase, setPhase] = useState("idle");
   const [runId, setRunId] = useState(0);
@@ -34,7 +35,7 @@ function GalleryCta({ style }) {
     // le panneau blanc transformé à l'intérieur provoquait un artefact de
     // rendu (liseré blanc visible) pendant l'animation d'apparition
     <span className="mt-2 inline-block" style={style}>
-      <a
+      <NavLink
         href="/galerie"
         className="group relative inline-flex items-center gap-3.5 overflow-hidden bg-accent px-6 py-4 text-sm font-medium whitespace-nowrap text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
         onMouseEnter={enter}
@@ -57,19 +58,27 @@ function GalleryCta({ style }) {
             }}
           />
         )}
-        <span className="relative z-10 text-black">Voir la galerie</span>
+        <span className="relative z-10 text-black">{label}</span>
         <span
           aria-hidden="true"
           className="relative z-10 inline-block text-black transition-transform duration-300 ease-[cubic-bezier(.23,1,.32,1)] group-hover:translate-x-1.5"
         >
           →
         </span>
-      </a>
+      </NavLink>
     </span>
   );
 }
 
-export default function Hero() {
+const HERO_DEFAULTS = {
+  title: "Théo — Photographe de course",
+  intro:
+    "Salut, je m'appelle Théo, photographe venant d'Angers. La photographie est pour moi une passion, une façon de capturer un souvenir, une émotion. Chaque photo que je prends a son histoire et raconte quelque chose.",
+  cta: "Voir la galerie",
+};
+
+export default function Hero({ content }) {
+  const c = { ...HERO_DEFAULTS, ...content };
   const [mounted, setMounted] = useState(false);
   const [cardHovered, setCardHovered] = useState(false);
   const [bgItem, setBgItem] = useState(DEFAULT_ITEMS[0]);
@@ -147,19 +156,16 @@ export default function Hero() {
           className="m-0 max-w-[16ch] text-[clamp(34px,5.4vw,78px)] font-medium leading-[1.02] tracking-[-0.035em] text-balance"
           style={textReveal(0)}
         >
-          Théo — Photographe de course
+          {c.title}
         </h1>
         <p
           className="m-0 max-w-[54ch] text-[clamp(15px,1.15vw,17px)] leading-[1.65] text-pretty"
           style={{ color: "rgba(244,244,242,0.86)", ...textReveal(90) }}
         >
-          Salut, je m&rsquo;appelle Théo, photographe venant d&rsquo;Angers. La
-          photographie est pour moi une passion, une façon de capturer un
-          souvenir, une émotion. Chaque photo que je prends a son histoire et
-          raconte quelque chose.
+          {c.intro}
         </p>
 
-        <GalleryCta style={textReveal(180)} />
+        <GalleryCta style={textReveal(180)} label={c.cta} />
       </div>
 
       <LatestAddedCard onHoverChange={setCardHovered} onActiveChange={setBgItem} />

@@ -1,0 +1,343 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faGoogle, faApple } from "@fortawesome/free-brands-svg-icons";
+
+const MODAL_EASING = "cubic-bezier(.23,1,.32,1)";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const TABS = [
+  ["login", "Se connecter"],
+  ["signup", "Créer un compte"],
+];
+
+function Field({ name, label, type = "text", value, onChange, error, focus, setFocus, autoComplete }) {
+  const focused = focus === name;
+  return (
+    <div className="flex flex-col gap-2">
+      <label htmlFor={name} className="text-[13px] font-medium text-[#111111]">
+        {label}
+      </label>
+      <input
+        id={name}
+        type={type}
+        value={value}
+        onChange={onChange}
+        onFocus={() => setFocus(name)}
+        onBlur={() => setFocus(null)}
+        autoComplete={autoComplete}
+        className="block w-full bg-transparent px-3 py-3 text-[15px] text-[#111111] outline-none"
+        style={{
+          borderBottom: focused ? "2px solid #FF4F00" : "1px solid rgba(17,17,17,0.25)",
+          boxShadow: focused ? "inset 0 0 0 1.5px #111111" : "none",
+        }}
+      />
+      {error && <span className="text-xs font-medium text-[#c0392b]">{error}</span>}
+    </div>
+  );
+}
+
+function LoginForm({ onSubmitted }) {
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [focus, setFocus] = useState(null);
+
+  const onField = (name) => (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((er) => ({ ...er, [name]: null }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const nextErrors = {};
+    if (!EMAIL_RE.test(form.email.trim())) nextErrors.email = "Indiquez une adresse e-mail valide.";
+    if (!form.password) nextErrors.password = "Indiquez votre mot de passe.";
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
+    onSubmitted();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      <Field
+        name="email"
+        label="E-mail"
+        type="email"
+        autoComplete="email"
+        value={form.email}
+        onChange={onField("email")}
+        error={errors.email}
+        focus={focus}
+        setFocus={setFocus}
+      />
+      <div className="flex flex-col gap-2">
+        <Field
+          name="password"
+          label="Mot de passe"
+          type="password"
+          autoComplete="current-password"
+          value={form.password}
+          onChange={onField("password")}
+          error={errors.password}
+          focus={focus}
+          setFocus={setFocus}
+        />
+        <button
+          type="button"
+          className="self-end border-0 bg-transparent p-0 text-xs text-[#111111] underline decoration-black/40 underline-offset-4"
+        >
+          Mot de passe oublié ?
+        </button>
+      </div>
+      <button
+        type="submit"
+        className="mt-1 flex w-full items-center justify-center bg-accent px-6 py-3.5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985]"
+      >
+        Se connecter
+      </button>
+    </form>
+  );
+}
+
+function SignupForm({ onSubmitted }) {
+  const [form, setForm] = useState({ nom: "", email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [focus, setFocus] = useState(null);
+
+  const onField = (name) => (e) => {
+    const value = e.target.value;
+    setForm((f) => ({ ...f, [name]: value }));
+    setErrors((er) => ({ ...er, [name]: null }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const nextErrors = {};
+    if (!form.nom.trim()) nextErrors.nom = "Indiquez votre nom.";
+    if (!EMAIL_RE.test(form.email.trim())) nextErrors.email = "Indiquez une adresse e-mail valide.";
+    if (form.password.length < 6) nextErrors.password = "Au moins 6 caractères.";
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      return;
+    }
+    setErrors({});
+    onSubmitted();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      <Field
+        name="nom"
+        label="Nom"
+        autoComplete="name"
+        value={form.nom}
+        onChange={onField("nom")}
+        error={errors.nom}
+        focus={focus}
+        setFocus={setFocus}
+      />
+      <Field
+        name="email"
+        label="E-mail"
+        type="email"
+        autoComplete="email"
+        value={form.email}
+        onChange={onField("email")}
+        error={errors.email}
+        focus={focus}
+        setFocus={setFocus}
+      />
+      <Field
+        name="password"
+        label="Mot de passe"
+        type="password"
+        autoComplete="new-password"
+        value={form.password}
+        onChange={onField("password")}
+        error={errors.password}
+        focus={focus}
+        setFocus={setFocus}
+      />
+      <button
+        type="submit"
+        className="mt-1 flex w-full items-center justify-center bg-accent px-6 py-3.5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985]"
+      >
+        Créer mon compte
+      </button>
+    </form>
+  );
+}
+
+function Divider() {
+  return (
+    <div className="my-6 flex items-center gap-3 text-xs" style={{ color: "rgba(17,17,17,0.45)" }}>
+      <span className="h-px flex-1" style={{ background: "rgba(17,17,17,0.15)" }} />
+      ou
+      <span className="h-px flex-1" style={{ background: "rgba(17,17,17,0.15)" }} />
+    </div>
+  );
+}
+
+function SocialButtons() {
+  return (
+    <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        className="flex w-full items-center justify-center gap-3 border bg-transparent px-6 py-3.5 text-sm font-medium text-[#111111] transition-colors duration-150 hover:bg-black/5"
+        style={{ borderColor: "rgba(17,17,17,0.2)" }}
+      >
+        <FontAwesomeIcon icon={faGoogle} />
+        Continuer avec Google
+      </button>
+      <button
+        type="button"
+        className="flex w-full items-center justify-center gap-3 border-0 bg-black px-6 py-3.5 text-sm font-medium text-white transition-opacity duration-150 hover:opacity-90"
+      >
+        <FontAwesomeIcon icon={faApple} />
+        Continuer avec Apple
+      </button>
+    </div>
+  );
+}
+
+function Confirmation({ message, onReset }) {
+  return (
+    <div role="status" className="flex flex-col gap-3.5 border-t pt-6" style={{ borderColor: "rgba(17,17,17,0.12)" }}>
+      <p className="m-0 text-lg font-medium leading-snug tracking-[-0.01em] text-[#111111]">{message}</p>
+      <button
+        type="button"
+        onClick={onReset}
+        className="self-start border-0 bg-transparent py-1.5 text-sm text-[#111111] underline decoration-black/40 underline-offset-[5px]"
+      >
+        Revenir au formulaire
+      </button>
+    </div>
+  );
+}
+
+// pop-up centrée au milieu de l'écran (fondu + léger zoom à l'ouverture),
+// comme les autres dialogs de la maquette de référence
+export default function AccountPanel({ open, onClose }) {
+  const [mode, setMode] = useState("login");
+  const [sent, setSent] = useState(false);
+  const bgRef = useRef(null);
+  const panelRef = useRef(null);
+  const closeBtnRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (bgRef.current) {
+      if (reduce) bgRef.current.style.opacity = "1";
+      else bgRef.current.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, fill: "forwards" });
+    }
+    if (panelRef.current) {
+      if (reduce) {
+        panelRef.current.style.opacity = "1";
+        panelRef.current.style.transform = "none";
+      } else
+        panelRef.current.animate(
+          [
+            { opacity: 0, transform: "scale(0.96) translateY(8px)" },
+            { opacity: 1, transform: "none" },
+          ],
+          { duration: 260, easing: MODAL_EASING, fill: "forwards" }
+        );
+    }
+    closeBtnRef.current?.focus({ preventScroll: true });
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const switchMode = (key) => {
+    setMode(key);
+    setSent(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[55] flex items-center justify-center p-5">
+      <div
+        ref={bgRef}
+        onClick={onClose}
+        aria-hidden="true"
+        className="absolute inset-0 bg-[rgba(10,10,10,0.5)]"
+        style={{ opacity: 0 }}
+      />
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={mode === "login" ? "Se connecter" : "Créer un compte"}
+        className="relative flex max-h-[90svh] w-full max-w-[400px] flex-col bg-paper text-[#111111]"
+        style={{ opacity: 0 }}
+      >
+        <button
+          ref={closeBtnRef}
+          type="button"
+          onClick={onClose}
+          aria-label="Fermer"
+          className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center border-0 bg-transparent text-[22px] text-[#111111] transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-90"
+        >
+          ✕
+        </button>
+
+        <div className="flex flex-none gap-7 px-7 pb-1 pt-7" style={{ borderBottom: "1px solid rgba(17,17,17,0.12)" }}>
+          {TABS.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => switchMode(key)}
+              className="pb-3 text-[15px] font-medium transition-colors duration-150"
+              style={{
+                color: mode === key ? "#111111" : "rgba(17,17,17,0.4)",
+                borderBottom: mode === key ? "2px solid #FF4F00" : "2px solid transparent",
+                marginBottom: "-1px",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain p-7">
+          {sent ? (
+            <Confirmation
+              message={mode === "login" ? "Vous êtes connecté." : "Votre compte a été créé."}
+              onReset={() => setSent(false)}
+            />
+          ) : (
+            <>
+              {mode === "login" ? (
+                <LoginForm key="login" onSubmitted={() => setSent(true)} />
+              ) : (
+                <SignupForm key="signup" onSubmitted={() => setSent(true)} />
+              )}
+              <Divider />
+              <SocialButtons />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import NavLink from "./NavLink";
+import AccountPanel from "./AccountPanel";
+import CartPanel from "./CartPanel";
 import { usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faBagShopping } from "@fortawesome/free-solid-svg-icons";
@@ -22,7 +24,10 @@ export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
 
+  const isAdmin = pathname?.startsWith("/admin");
   const hasHero = pathname === "/";
   const solid = scrolled || !hasHero;
 
@@ -38,7 +43,10 @@ export default function Navbar() {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  if (isAdmin) return null;
+
   return (
+    <>
     <header
       className="fixed inset-x-0 top-0 z-20 flex h-16 items-center justify-between px-5 sm:px-10 md:px-14"
       style={{
@@ -82,21 +90,23 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-5">
-          <NavLink
-            href="/connexion"
+          <button
+            type="button"
+            onClick={() => setAccountOpen(true)}
             aria-label="Mon compte"
-            className="flex min-h-11 items-center justify-center text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
+            className="flex min-h-11 cursor-pointer items-center justify-center border-0 bg-transparent text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
           >
             <FontAwesomeIcon icon={faUser} />
-          </NavLink>
+          </button>
 
-          <NavLink
-            href="/boutique"
-            aria-label="Boutique"
-            className="flex min-h-11 items-center justify-center text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
+          <button
+            type="button"
+            onClick={() => setCartOpen(true)}
+            aria-label="Panier"
+            className="flex min-h-11 cursor-pointer items-center justify-center border-0 bg-transparent text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
           >
             <FontAwesomeIcon icon={faBagShopping} />
-          </NavLink>
+          </button>
         </div>
 
         <button
@@ -108,5 +118,8 @@ export default function Navbar() {
         </button>
       </div>
     </header>
+    <AccountPanel open={accountOpen} onClose={() => setAccountOpen(false)} />
+    <CartPanel open={cartOpen} onClose={() => setCartOpen(false)} />
+    </>
   );
 }
