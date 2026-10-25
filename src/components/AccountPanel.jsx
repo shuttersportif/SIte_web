@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle, faApple } from "@fortawesome/free-brands-svg-icons";
 
@@ -205,26 +206,11 @@ function SocialButtons() {
   );
 }
 
-function Confirmation({ message, onReset }) {
-  return (
-    <div role="status" className="flex flex-col gap-3.5 border-t pt-6" style={{ borderColor: "rgba(17,17,17,0.12)" }}>
-      <p className="m-0 text-lg font-medium leading-snug tracking-[-0.01em] text-[#111111]">{message}</p>
-      <button
-        type="button"
-        onClick={onReset}
-        className="self-start border-0 bg-transparent py-1.5 text-sm text-[#111111] underline decoration-black/40 underline-offset-[5px]"
-      >
-        Revenir au formulaire
-      </button>
-    </div>
-  );
-}
-
 // pop-up centrée au milieu de l'écran (fondu + léger zoom à l'ouverture),
 // comme les autres dialogs de la maquette de référence
 export default function AccountPanel({ open, onClose }) {
+  const router = useRouter();
   const [mode, setMode] = useState("login");
-  const [sent, setSent] = useState(false);
   const bgRef = useRef(null);
   const panelRef = useRef(null);
   const closeBtnRef = useRef(null);
@@ -269,9 +255,11 @@ export default function AccountPanel({ open, onClose }) {
 
   if (!open) return null;
 
-  const switchMode = (key) => {
-    setMode(key);
-    setSent(false);
+  const switchMode = (key) => setMode(key);
+
+  const goToAccount = () => {
+    onClose();
+    router.push("/mon-espace");
   };
 
   return (
@@ -320,22 +308,13 @@ export default function AccountPanel({ open, onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-7">
-          {sent ? (
-            <Confirmation
-              message={mode === "login" ? "Vous êtes connecté." : "Votre compte a été créé."}
-              onReset={() => setSent(false)}
-            />
+          {mode === "login" ? (
+            <LoginForm key="login" onSubmitted={goToAccount} />
           ) : (
-            <>
-              {mode === "login" ? (
-                <LoginForm key="login" onSubmitted={() => setSent(true)} />
-              ) : (
-                <SignupForm key="signup" onSubmitted={() => setSent(true)} />
-              )}
-              <Divider />
-              <SocialButtons />
-            </>
+            <SignupForm key="signup" onSubmitted={goToAccount} />
           )}
+          <Divider />
+          <SocialButtons />
         </div>
       </div>
     </div>
