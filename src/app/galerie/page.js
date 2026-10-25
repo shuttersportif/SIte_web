@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Galerie from "../../components/Galerie";
 
 export const metadata = {
@@ -5,7 +6,15 @@ export const metadata = {
   description: "Les photos des dernières courses cyclistes et de sport mécanique, classées par catégorie et par date.",
 };
 
-export default async function GaleriePage({ searchParams }) {
+async function GalerieWithCourse({ searchParams }) {
   const { course } = await searchParams;
   return <Galerie initialCourse={course} />;
+}
+
+export default function GaleriePage({ searchParams }) {
+  return (
+    <Suspense fallback={<Galerie initialCourse={undefined} />}>
+      <GalerieWithCourse searchParams={searchParams} />
+    </Suspense>
+  );
 }
