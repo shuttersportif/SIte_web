@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { login } from "../../app/admin/authActions";
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("theo@theo-photographe.fr");
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const submit = (e) => {
     e.preventDefault();
@@ -14,7 +16,14 @@ export default function Login({ onLogin }) {
       return;
     }
     setErr("");
-    onLogin(email.trim());
+    startTransition(async () => {
+      const res = await login({ email: email.trim(), password: pw });
+      if (res.ok) {
+        onLogin(email.trim());
+      } else {
+        setErr(res.message);
+      }
+    });
   };
 
   return (
@@ -63,13 +72,11 @@ export default function Login({ onLogin }) {
 
         <button
           type="submit"
-          className="min-h-[50px] border-0 bg-accent text-[15px] font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98]"
+          disabled={isPending}
+          className="min-h-[50px] border-0 bg-accent text-[15px] font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98] disabled:opacity-60"
         >
-          Se connecter
+          {isPending ? "Connexion…" : "Se connecter"}
         </button>
-        <p className="m-0 text-xs text-[#555555]">
-          Démonstration : n&rsquo;importe quel e-mail et mot de passe ouvrent le panel.
-        </p>
       </form>
     </div>
   );

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { buildAdminData, aggregate } from "../../lib/adminData";
+import { createClient } from "../../lib/supabase/browserClient";
+import { logout as logoutAction } from "../../app/admin/authActions";
 import Login from "./Login";
 import Sidebar from "./Sidebar";
 import Dashboard from "./Dashboard";
@@ -17,8 +19,6 @@ import NewGalleryModal from "./NewGalleryModal";
 import SendLinkModal from "./SendLinkModal";
 import Toast from "./Toast";
 
-const SESSION_KEY = "theo-admin-session";
-
 export default function AdminApp({ initialContent }) {
   const [authed, setAuthed] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
@@ -30,17 +30,25 @@ export default function AdminApp({ initialContent }) {
   const [toastMsg, setToastMsg] = useState(null);
 
   useEffect(() => {
-    try {
-      const e = localStorage.getItem(SESSION_KEY);
-      if (e) {
+    const supabase = createClient();
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
         setAuthed(true);
-        setAdminEmail(e);
+        setAdminEmail(session.user.email);
       }
-    } catch {
-      /* ignore */
-    }
-    setReady(true);
-    setDb(buildAdminData());
+      setReady(true);
+      setDb(buildAdminData());
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session?.user);
+      setAdminEmail(session?.user?.email ?? "");
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const toast = (msg) => {
@@ -50,20 +58,13 @@ export default function AdminApp({ initialContent }) {
   };
 
   const login = (email) => {
-    try {
-      localStorage.setItem(SESSION_KEY, email);
-    } catch {
-      /* ignore */
-    }
     setAuthed(true);
     setAdminEmail(email);
   };
-  const logout = () => {
-    try {
-      localStorage.removeItem(SESSION_KEY);
-    } catch {
-      /* ignore */
-    }
+  const logout = async () => {
+    await logoutAction();
+    const supabase = createClient();
+    await supabase.auth.signOut();
     setAuthed(false);
   };
 

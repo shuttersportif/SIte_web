@@ -1,14 +1,19 @@
 "use server";
 
 import { supabaseAdmin } from "../../lib/supabaseAdmin";
+import { createClient } from "../../lib/supabase/serverClient";
 import { updateTag } from "next/cache";
 
-// TODO : tant qu'il n'y a pas de vraie authentification admin (voir
-// AccountPanel/Login — actuellement une session de démo côté client), rien
-// ici ne vérifie qui appelle cette action. À sécuriser avant la mise en
-// production : vérifier une session serveur (ex. Supabase Auth) avant
-// d'autoriser l'écriture.
 export async function saveContent(data) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, message: "Session expirée, reconnectez-vous." };
+  }
+
   const { error } = await supabaseAdmin
     .from("site_content")
     .update({ data, updated_at: new Date().toISOString() })
