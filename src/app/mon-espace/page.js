@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import MonEspace from "../../components/MonEspace";
 
 export const metadata = {
@@ -6,5 +7,9 @@ export const metadata = {
 };
 
 export default function MonEspacePage() {
-  return <MonEspace />;
+  return (
+    <Suspense fallback={null}>
+      <MonEspace />
+    </Suspense>
+  );
 }

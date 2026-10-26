@@ -131,7 +131,7 @@ export default function AdminApp({ initialContent }) {
       <main className="min-w-0 flex-1 p-5 sm:p-8">
         <div className="mx-auto flex max-w-[1320px] flex-col gap-6">
           {view === "dash" && <Dashboard db={db} onOpenOrder={openOrder} onNavigate={setView} />}
-          {view === "orders" && <Orders db={db} onOpenOrder={openOrder} />}
+          {view === "orders" && <Orders />}
           {view === "clients" && <Clients db={db} onOpenClient={openClient} />}
           {view === "gals" && (
             <Galleries

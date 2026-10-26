@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NavLink from "./NavLink";
 import AccountPanel from "./AccountPanel";
 import CartPanel from "./CartPanel";
@@ -8,6 +8,13 @@ import { usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faBagShopping } from "@fortawesome/free-solid-svg-icons";
 import { faUser } from "@fortawesome/free-regular-svg-icons";
+import { useSupabaseUser } from "../lib/useSupabaseUser";
+import { createClient } from "../lib/supabase/browserClient";
+
+function accountInitial(user) {
+  const source = user?.user_metadata?.full_name?.trim() || user?.email || "?";
+  return source.charAt(0).toUpperCase();
+}
 
 const LINKS = [
   { href: "/", label: "Accueil" },
@@ -26,6 +33,9 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+  const { user } = useSupabaseUser();
 
   const isAdmin = pathname?.startsWith("/admin");
   const hasHero = pathname === "/";
@@ -42,6 +52,21 @@ export default function Navbar() {
     const id = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [menuOpen]);
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+  };
 
   if (isAdmin) return null;
 
@@ -90,14 +115,66 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-5">
-          <button
-            type="button"
-            onClick={() => setAccountOpen(true)}
-            aria-label="Mon compte"
-            className="flex min-h-11 cursor-pointer items-center justify-center border-0 bg-transparent text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
-          >
-            <FontAwesomeIcon icon={faUser} />
-          </button>
+          {user ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Mon compte"
+                aria-expanded={menuOpen}
+                className="flex h-9 w-9 min-h-9 cursor-pointer items-center justify-center rounded-full border text-[13px] font-medium transition-opacity duration-150 hover:opacity-90"
+                style={{ borderColor: "currentColor" }}
+              >
+                {accountInitial(user)}
+              </button>
+
+              {menuOpen && (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-[calc(100%+10px)] w-56 bg-paper text-[#111111] shadow-lg"
+                  style={{ border: "1px solid rgba(17,17,17,0.12)" }}
+                >
+                  <div
+                    className="truncate px-4 py-3 text-xs text-[#666666]"
+                    style={{ borderBottom: "1px solid rgba(17,17,17,0.08)" }}
+                  >
+                    {user.email}
+                  </div>
+                  <NavLink
+                    href="/mon-espace?tab=info"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-3 text-sm transition-colors duration-150 hover:bg-black/5"
+                  >
+                    Mon profil
+                  </NavLink>
+                  <NavLink
+                    href="/mon-espace?tab=dl"
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-4 py-3 text-sm transition-colors duration-150 hover:bg-black/5"
+                  >
+                    Mes téléchargements
+                  </NavLink>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="block w-full cursor-pointer border-0 bg-transparent px-4 py-3 text-left text-sm transition-colors duration-150 hover:bg-black/5"
+                    style={{ borderTop: "1px solid rgba(17,17,17,0.08)" }}
+                  >
+                    Se déconnecter
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAccountOpen(true)}
+              aria-label="Mon compte"
+              className="flex min-h-11 cursor-pointer items-center justify-center border-0 bg-transparent text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
+            >
+              <FontAwesomeIcon icon={faUser} />
+            </button>
+          )}
 
           <button
             type="button"
@@ -119,7 +196,7 @@ export default function Navbar() {
       </div>
     </header>
     <AccountPanel open={accountOpen} onClose={() => setAccountOpen(false)} />
-    <CartPanel open={cartOpen} onClose={() => setCartOpen(false)} />
+    <CartPanel open={cartOpen} onClose={() => setCartOpen(false)} onNeedAccount={() => setAccountOpen(true)} />
     </>
   );
 }

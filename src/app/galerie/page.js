@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Galerie from "../../components/Galerie";
+import { getPublicCourses } from "../../lib/getPublicCourses";
 
 export const metadata = {
   title: "Galerie — Théo, photographe de course",
@@ -8,12 +9,13 @@ export const metadata = {
 
 async function GalerieWithCourse({ searchParams }) {
   const { course } = await searchParams;
-  return <Galerie initialCourse={course} />;
+  const courses = await getPublicCourses();
+  return <Galerie initialCourse={course} courses={courses} />;
 }
 
 export default function GaleriePage({ searchParams }) {
   return (
-    <Suspense fallback={<Galerie initialCourse={undefined} />}>
+    <Suspense fallback={<Galerie initialCourse={undefined} courses={[]} />}>
       <GalerieWithCourse searchParams={searchParams} />
     </Suspense>
   );

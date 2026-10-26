@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import DrawBar from "./DrawBar";
 import GalleryEngine from "./GalleryEngine";
-import { COURSES, CATEGORY_NAMES, fmt, monthTitle, WEEKDAYS } from "../lib/galleryData";
+import { CATEGORY_NAMES, fmt, monthTitle, WEEKDAYS } from "../lib/galleryData";
+import { addToCart } from "../lib/cartStore";
 
-const ALL_SORTED = [...COURSES].sort((a, b) => b.date.localeCompare(a.date));
-const MOST_RECENT = ALL_SORTED[0];
+const euro = (n) =>
+  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n || 0);
 
 function sumPhotos(list) {
   return list.reduce((n, r) => n + r.photos.length, 0);
@@ -19,7 +20,7 @@ function pad2(n) {
 // une vignette qui s'anime en fondu/glissement dès qu'elle entre dans le
 // viewport (même technique que les autres grilles du site) — vue utilisée
 // en dessous de lg, là où le carrousel en pile cède la place à une grille
-function GridPhoto({ photo, index }) {
+function GridPhoto({ photo, index, galleryId, titre }) {
   const [visible, setVisible] = useState(false);
   const ref = useRef(null);
 
@@ -64,11 +65,26 @@ function GridPhoto({ photo, index }) {
       >
         © Théo
       </span>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent p-2.5">
+        <span className="text-[13px] font-medium text-white" style={{ fontVariantNumeric: "tabular-nums" }}>
+          {euro(photo.prix)}
+        </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            addToCart({ photoId: photo.id, galleryId, src: photo.src, titre, prix: photo.prix });
+          }}
+          className="pointer-events-auto inline-flex min-h-9 items-center bg-accent px-3 text-[12px] font-medium text-black"
+        >
+          Ajouter au panier
+        </button>
+      </div>
     </figure>
   );
 }
 
-export default function Galerie({ initialCourse }) {
+export default function Galerie({ initialCourse, courses = [] }) {
   const [cat, setCat] = useState(null);
   const [date, setDate] = useState(null);
   const [gRaceId, setGRaceId] = useState(initialCourse || null);
@@ -78,15 +94,18 @@ export default function Galerie({ initialCourse }) {
   const calWrapRef = useRef(null);
   const engineRef = useRef(null);
 
+  const allSorted = useMemo(() => [...courses].sort((a, b) => b.date.localeCompare(a.date)), [courses]);
+  const mostRecent = allSorted[0] || null;
+
   const initialGlobalIdx = useMemo(() => {
     if (!initialCourse) return 0;
     let acc = 0;
-    for (const r of ALL_SORTED) {
+    for (const r of allSorted) {
       if (r.id === initialCourse) return acc;
       acc += r.photos.length;
     }
     return 0;
-  }, [initialCourse]);
+  }, [initialCourse, allSorted]);
 
   useEffect(() => {
     if (!calOpen) return;
@@ -105,8 +124,8 @@ export default function Galerie({ initialCourse }) {
   }, [calOpen]);
 
   const catF = useMemo(
-    () => ALL_SORTED.filter((r) => !cat || r.categorie === cat),
-    [cat]
+    () => allSorted.filter((r) => !cat || r.categorie === cat),
+    [allSorted, cat]
   );
   const filtered = useMemo(
     () => (date ? catF.filter((r) => r.date === date) : catF),
@@ -121,20 +140,20 @@ export default function Galerie({ initialCourse }) {
     ? ""
     : date
       ? `Course du ${fmt(date)}`
-      : race.id === MOST_RECENT.id
+      : mostRecent && race.id === mostRecent.id
         ? `Dernière course, ${CATEGORY_NAMES[race.categorie]}`
         : CATEGORY_NAMES[race.categorie];
 
   const catOpts = useMemo(
     () => [
-      { id: null, label: "Toutes", count: sumPhotos(COURSES) },
+      { id: null, label: "Toutes", count: sumPhotos(courses) },
       ...Object.entries(CATEGORY_NAMES).map(([id, lbl]) => ({
         id,
         label: lbl,
-        count: sumPhotos(COURSES.filter((r) => r.categorie === id)),
+        count: sumPhotos(courses.filter((r) => r.categorie === id)),
       })),
     ],
-    []
+    [courses]
   );
 
   const pickCat = (id) => {
@@ -152,7 +171,7 @@ export default function Galerie({ initialCourse }) {
   // calendrier — new Date() ne doit jamais s'évaluer pendant le rendu (prérendu
   // figé avec Cache Components) : valeur de repli statique, corrigée après le
   // montage côté client
-  const [todayIso, setTodayIso] = useState(MOST_RECENT.date);
+  const [todayIso, setTodayIso] = useState(mostRecent?.date || "1970-01-01");
   useEffect(() => {
     const now = new Date();
     setTodayIso(`${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`);
@@ -234,6 +253,28 @@ export default function Galerie({ initialCourse }) {
                 className="flex h-9 w-9 items-center justify-center border-0 bg-transparent text-[#111111] transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.92]"
               >
                 →
+              </button>
+            </div>
+          )}
+          {race && n > 0 && race.photos[enginePhotoIdx] && (
+            <div className="hidden items-center gap-3 pt-2.5 lg:flex">
+              <span className="text-[15px] font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
+                {euro(race.photos[enginePhotoIdx].prix)}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  addToCart({
+                    photoId: race.photos[enginePhotoIdx].id,
+                    galleryId: race.id,
+                    src: race.photos[enginePhotoIdx].src,
+                    titre: `${race.nom} — photo ${enginePhotoIdx + 1}`,
+                    prix: race.photos[enginePhotoIdx].prix,
+                  })
+                }
+                className="inline-flex min-h-10 items-center gap-2 bg-accent px-4 text-[13px] font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
+              >
+                Ajouter au panier
               </button>
             </div>
           )}
@@ -408,7 +449,9 @@ export default function Galerie({ initialCourse }) {
 
           <div className="px-5 pb-12 pt-[clamp(40px,7vh,72px)] sm:px-10 md:px-14 lg:hidden">
             <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
-              {race?.photos.map((p, i) => <GridPhoto key={p.id} photo={p} index={i} />)}
+              {race?.photos.map((p, i) => (
+                <GridPhoto key={p.id} photo={p} index={i} galleryId={race.id} titre={`${race.nom} — photo ${i + 1}`} />
+              ))}
             </div>
 
             <div className="ml-auto flex max-w-[760px] flex-col pt-[clamp(72px,12vh,140px)]">

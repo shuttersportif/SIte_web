@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGoogle, faApple } from "@fortawesome/free-brands-svg-icons";
+import { createClient } from "../lib/supabase/browserClient";
 
 const MODAL_EASING = "cubic-bezier(.23,1,.32,1)";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,6 +44,7 @@ function LoginForm({ onSubmitted }) {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [focus, setFocus] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const onField = (name) => (e) => {
     const value = e.target.value;
@@ -50,7 +52,7 @@ function LoginForm({ onSubmitted }) {
     setErrors((er) => ({ ...er, [name]: null }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = {};
     if (!EMAIL_RE.test(form.email.trim())) nextErrors.email = "Indiquez une adresse e-mail valide.";
@@ -60,6 +62,17 @@ function LoginForm({ onSubmitted }) {
       return;
     }
     setErrors({});
+    setSubmitting(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: form.email.trim(),
+      password: form.password,
+    });
+    setSubmitting(false);
+    if (error) {
+      setErrors({ password: "E-mail ou mot de passe incorrect." });
+      return;
+    }
     onSubmitted();
   };
 
@@ -97,18 +110,46 @@ function LoginForm({ onSubmitted }) {
       </div>
       <button
         type="submit"
-        className="mt-1 flex w-full items-center justify-center bg-accent px-6 py-3.5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985]"
+        disabled={submitting}
+        className="mt-1 flex w-full items-center justify-center bg-accent px-6 py-3.5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985] disabled:opacity-60"
       >
-        Se connecter
+        {submitting ? "Connexion…" : "Se connecter"}
       </button>
     </form>
   );
 }
 
+function PasswordStrength({ password }) {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (/[A-Z]/.test(password)) score++;
+  if (/[0-9]/.test(password)) score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex gap-1.5">
+        {[0, 1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className="h-1 flex-1"
+            style={{ background: i < score ? "var(--accent)" : "rgba(17,17,17,0.12)" }}
+          />
+        ))}
+      </div>
+      <span className="text-xs" style={{ color: "rgba(17,17,17,0.5)" }}>
+        Solidité : 8 caractères minimum
+      </span>
+    </div>
+  );
+}
+
 function SignupForm({ onSubmitted }) {
-  const [form, setForm] = useState({ nom: "", email: "", password: "" });
+  const [form, setForm] = useState({ prenom: "", nom: "", email: "", password: "" });
+  const [consent, setConsent] = useState(false);
   const [errors, setErrors] = useState({});
   const [focus, setFocus] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const onField = (name) => (e) => {
     const value = e.target.value;
@@ -116,32 +157,59 @@ function SignupForm({ onSubmitted }) {
     setErrors((er) => ({ ...er, [name]: null }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = {};
+    if (!form.prenom.trim()) nextErrors.prenom = "Indiquez votre prénom.";
     if (!form.nom.trim()) nextErrors.nom = "Indiquez votre nom.";
     if (!EMAIL_RE.test(form.email.trim())) nextErrors.email = "Indiquez une adresse e-mail valide.";
-    if (form.password.length < 6) nextErrors.password = "Au moins 6 caractères.";
+    if (form.password.length < 8) nextErrors.password = "Au moins 8 caractères.";
+    if (!consent) nextErrors.consent = "Vous devez accepter pour créer un compte.";
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
       return;
     }
     setErrors({});
+    setSubmitting(true);
+    const supabase = createClient();
+    const fullName = `${form.prenom.trim()} ${form.nom.trim()}`.trim();
+    const { error } = await supabase.auth.signUp({
+      email: form.email.trim(),
+      password: form.password,
+      options: { data: { full_name: fullName, first_name: form.prenom.trim(), last_name: form.nom.trim() } },
+    });
+    setSubmitting(false);
+    if (error) {
+      setErrors({ email: error.message === "User already registered" ? "Cet e-mail est déjà utilisé." : error.message });
+      return;
+    }
     onSubmitted();
   };
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-      <Field
-        name="nom"
-        label="Nom"
-        autoComplete="name"
-        value={form.nom}
-        onChange={onField("nom")}
-        error={errors.nom}
-        focus={focus}
-        setFocus={setFocus}
-      />
+      <div className="grid grid-cols-2 gap-5">
+        <Field
+          name="prenom"
+          label="Prénom"
+          autoComplete="given-name"
+          value={form.prenom}
+          onChange={onField("prenom")}
+          error={errors.prenom}
+          focus={focus}
+          setFocus={setFocus}
+        />
+        <Field
+          name="nom"
+          label="Nom"
+          autoComplete="family-name"
+          value={form.nom}
+          onChange={onField("nom")}
+          error={errors.nom}
+          focus={focus}
+          setFocus={setFocus}
+        />
+      </div>
       <Field
         name="email"
         label="E-mail"
@@ -153,22 +221,50 @@ function SignupForm({ onSubmitted }) {
         focus={focus}
         setFocus={setFocus}
       />
-      <Field
-        name="password"
-        label="Mot de passe"
-        type="password"
-        autoComplete="new-password"
-        value={form.password}
-        onChange={onField("password")}
-        error={errors.password}
-        focus={focus}
-        setFocus={setFocus}
-      />
+      <div className="flex flex-col gap-2">
+        <Field
+          name="password"
+          label="Mot de passe"
+          type="password"
+          autoComplete="new-password"
+          value={form.password}
+          onChange={onField("password")}
+          error={errors.password}
+          focus={focus}
+          setFocus={setFocus}
+        />
+        <PasswordStrength password={form.password} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-[#444444]">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => {
+              setConsent(e.target.checked);
+              setErrors((er) => ({ ...er, consent: null }));
+            }}
+            className="mt-0.5 h-4 w-4 flex-none accent-[color:var(--accent)]"
+          />
+          J&rsquo;accepte que mes données soient utilisées pour gérer mon compte et mes achats, conformément à la{" "}
+          <a
+            href="/confidentialite"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-black/40 underline-offset-2"
+          >
+            politique de confidentialité
+          </a>
+          .
+        </label>
+        {errors.consent && <span className="text-xs font-medium text-[#c0392b]">{errors.consent}</span>}
+      </div>
       <button
         type="submit"
-        className="mt-1 flex w-full items-center justify-center bg-accent px-6 py-3.5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985]"
+        disabled={submitting}
+        className="mt-1 flex w-full items-center justify-center bg-accent px-6 py-3.5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985] disabled:opacity-60"
       >
-        Créer mon compte
+        {submitting ? "Création…" : "Créer mon compte"}
       </button>
     </form>
   );

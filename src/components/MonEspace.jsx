@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { buildAccountData } from "../lib/accountData";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useSupabaseUser } from "../lib/useSupabaseUser";
+import { createClient } from "../lib/supabase/browserClient";
 
 const TABS = [
   ["dl", "Mes téléchargements"],
@@ -10,15 +12,39 @@ const TABS = [
   ["info", "Mes informations"],
 ];
 
-const STATUT_LABEL = { payee: "Payée", rembourse: "Remboursée" };
+const STATUT_LABEL = { en_attente: "En attente", payee: "Payée", rembourse: "Remboursée" };
 
-function Downloads({ db }) {
-  if (!db.downloads.length) {
+const euro = (n) =>
+  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n || 0);
+const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("fr-FR") : "");
+
+function flattenDownloads(orders) {
+  const out = [];
+  orders
+    .filter((o) => o.statut === "payee")
+    .forEach((o) => {
+      (o.order_items || []).forEach((it) => {
+        out.push({
+          key: it.id,
+          galNom: it.photos?.galleries?.nom || "",
+          n: it.photos?.numero,
+          src: it.photos?.src,
+          date: o.created_at,
+          restants: it.telechargements_restants,
+        });
+      });
+    });
+  return out;
+}
+
+function Downloads({ orders, onDownload, downloading }) {
+  const downloads = flattenDownloads(orders);
+  if (!downloads.length) {
     return <p className="m-0 text-sm text-[#555555]">Aucune photo achetée pour l&rsquo;instant.</p>;
   }
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,220px),1fr))] gap-4">
-      {db.downloads.map((d) => (
+      {downloads.map((d) => (
         <article key={d.key} className="flex flex-col bg-[#fbfbfa]" style={{ border: "1px solid rgba(17,17,17,0.08)" }}>
           <div className="relative aspect-[4/3] overflow-hidden bg-[#e4e4e1]">
             <div className="absolute inset-0 bg-cover bg-center grayscale" style={{ backgroundImage: `url(${d.src})` }} />
@@ -26,14 +52,19 @@ function Downloads({ db }) {
           <div className="flex flex-col gap-2 p-3.5">
             <span className="truncate text-[13px] font-medium">{d.galNom}</span>
             <span className="text-xs text-[#555555]">
-              Photo {d.n} · {db.fmt(d.date)}
+              Photo {d.n} · {fmtDate(d.date)}
             </span>
             <button
               type="button"
-              disabled={d.restants <= 0}
+              disabled={d.restants <= 0 || downloading === d.key}
+              onClick={() => onDownload(d.key)}
               className="mt-1 min-h-9 border-0 bg-accent px-3 text-xs font-medium text-black disabled:cursor-default disabled:bg-[rgba(17,17,17,0.12)] disabled:text-[rgba(17,17,17,0.4)]"
             >
-              {d.restants > 0 ? `Télécharger (${d.restants} restant${d.restants > 1 ? "s" : ""})` : "Téléchargements épuisés"}
+              {d.restants > 0
+                ? downloading === d.key
+                  ? "Téléchargement…"
+                  : `Télécharger (${d.restants} restant${d.restants > 1 ? "s" : ""})`
+                : "Téléchargements épuisés"}
             </button>
           </div>
         </article>
@@ -42,8 +73,8 @@ function Downloads({ db }) {
   );
 }
 
-function Orders({ db }) {
-  if (!db.orders.length) {
+function Orders({ orders }) {
+  if (!orders.length) {
     return <p className="m-0 text-sm text-[#555555]">Vous n&rsquo;avez pas encore passé de commande.</p>;
   }
   return (
@@ -60,23 +91,23 @@ function Orders({ db }) {
             <span className="text-right">Total</span>
             <span>Statut</span>
           </div>
-          {db.orders.map((o) => (
+          {orders.map((o) => (
             <div
               key={o.id}
               className="grid grid-cols-[minmax(130px,1.1fr)_100px_70px_100px_120px] items-center gap-4 border-b py-3"
               style={{ borderColor: "rgba(17,17,17,0.07)", minHeight: 50 }}
             >
               <span className="font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {o.id}
+                {o.id.slice(0, 8).toUpperCase()}
               </span>
-              <span className="text-[#333333]">{db.fmt(o.date)}</span>
+              <span className="text-[#333333]">{fmtDate(o.created_at)}</span>
               <span className="text-right" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {o.items.length}
+                {(o.order_items || []).length}
               </span>
               <span className="text-right" style={{ fontVariantNumeric: "tabular-nums" }}>
-                {db.euro(o.total)}
+                {euro(o.total)}
               </span>
-              <span className="text-[13px]">{STATUT_LABEL[o.statut]}</span>
+              <span className="text-[13px]">{STATUT_LABEL[o.statut] || o.statut}</span>
             </div>
           ))}
         </div>
@@ -85,21 +116,21 @@ function Orders({ db }) {
   );
 }
 
-function PrivateGalleries({ db }) {
-  if (!db.privateGals.length) {
+function PrivateGalleries({ galleries }) {
+  if (!galleries.length) {
     return <p className="m-0 text-sm text-[#555555]">Aucune galerie privée ne vous a été partagée.</p>;
   }
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,280px),1fr))] gap-4">
-      {db.privateGals.map((g) => (
+      {galleries.map((g) => (
         <article key={g.id} className="flex flex-col bg-[#fbfbfa]" style={{ border: "1px solid rgba(17,17,17,0.08)" }}>
           <div className="relative aspect-[3/2] overflow-hidden bg-[#e4e4e1]">
-            <div className="absolute inset-0 bg-cover bg-center grayscale" style={{ backgroundImage: `url(${g.photos[0]?.src})` }} />
+            <div className="absolute inset-0 bg-cover bg-center grayscale" style={{ backgroundImage: `url(${g.photos?.[0]?.src})` }} />
           </div>
           <div className="flex flex-col gap-1.5 p-4">
             <h2 className="m-0 text-[15px] font-medium leading-tight">{g.nom}</h2>
             <span className="text-xs text-[#555555]">
-              {db.fmt(g.date)} · {db.catName(g.categorie)}
+              {fmtDate(g.date)} · {g.categorie}
             </span>
             <a
               href={`/galerie-privee/${g.token}`}
@@ -114,11 +145,12 @@ function PrivateGalleries({ db }) {
   );
 }
 
-function Field({ label, value, onChange }) {
+function Field({ label, value, onChange, type = "text" }) {
   return (
     <label className="flex flex-col gap-1.5">
       <span className="text-[13px] text-[#444444]">{label}</span>
       <input
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="border-0 border-b bg-transparent py-2 text-[15px] text-[#111111] outline-none focus:border-accent focus:shadow-[0_1px_0_#FF4F00]"
@@ -128,29 +160,77 @@ function Field({ label, value, onChange }) {
   );
 }
 
-function Infos({ db, toast }) {
-  const [draft, setDraft] = useState({ nom: db.client.nom, email: db.client.email, tel: db.client.tel });
+function Infos({ profile, toast, onSaved }) {
+  const [draft, setDraft] = useState({
+    prenom: profile.first_name || "",
+    nom: profile.last_name || "",
+    email: profile.email || "",
+    tel: profile.phone || "",
+  });
+  const [saving, setSaving] = useState(false);
 
-  const save = (e) => {
+  const save = async (e) => {
     e.preventDefault();
-    toast("Informations enregistrées.");
+    setSaving(true);
+    const supabase = createClient();
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ first_name: draft.prenom, last_name: draft.nom, phone: draft.tel })
+      .eq("id", profile.id);
+
+    let emailChanged = false;
+    let emailError = null;
+    if (draft.email.trim() !== profile.email) {
+      emailChanged = true;
+      const { error } = await supabase.auth.updateUser({ email: draft.email.trim() });
+      emailError = error;
+      if (!error) await supabase.from("profiles").update({ email: draft.email.trim() }).eq("id", profile.id);
+    }
+
+    setSaving(false);
+    if (profileError || emailError) {
+      toast("Une erreur est survenue, réessayez.");
+      return;
+    }
+    onSaved({ ...profile, first_name: draft.prenom, last_name: draft.nom, phone: draft.tel, email: draft.email.trim() });
+    toast(
+      emailChanged
+        ? "Informations enregistrées. Vérifiez votre boîte mail pour confirmer le nouvel e-mail."
+        : "Informations enregistrées."
+    );
   };
 
   return (
     <form onSubmit={save} className="flex max-w-[420px] flex-col gap-5">
+      <Field label="Prénom" value={draft.prenom} onChange={(v) => setDraft((d) => ({ ...d, prenom: v }))} />
       <Field label="Nom" value={draft.nom} onChange={(v) => setDraft((d) => ({ ...d, nom: v }))} />
-      <Field label="E-mail" value={draft.email} onChange={(v) => setDraft((d) => ({ ...d, email: v }))} />
+      <Field label="E-mail" type="email" value={draft.email} onChange={(v) => setDraft((d) => ({ ...d, email: v }))} />
       <Field label="Téléphone" value={draft.tel} onChange={(v) => setDraft((d) => ({ ...d, tel: v }))} />
-      <button type="submit" className="min-h-11 self-start border-0 bg-accent px-5 text-sm font-medium text-black">
-        Enregistrer
+      <button
+        type="submit"
+        disabled={saving}
+        className="min-h-11 self-start border-0 bg-accent px-5 text-sm font-medium text-black disabled:opacity-60"
+      >
+        {saving ? "Enregistrement…" : "Enregistrer"}
       </button>
     </form>
   );
 }
 
+const TAB_KEYS = TABS.map(([key]) => key);
+const ORDER_ITEMS_SELECT =
+  "id, statut, sous_total, remise, total, created_at, order_items(id, qty, prix, telechargements_max, telechargements_restants, photos(id, src, numero, galleries(nom)))";
+
 export default function MonEspace() {
-  const [db] = useState(buildAccountData);
-  const [tab, setTab] = useState("dl");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const { user, ready } = useSupabaseUser();
+  const [tab, setTab] = useState(TAB_KEYS.includes(requestedTab) ? requestedTab : "dl");
+  const [profile, setProfile] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [galleries, setGalleries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(null);
   const [toastMsg, setToastMsg] = useState(null);
 
   const toast = (msg) => {
@@ -158,6 +238,62 @@ export default function MonEspace() {
     clearTimeout(toast._t);
     toast._t = setTimeout(() => setToastMsg(null), 2600);
   };
+
+  useEffect(() => {
+    if (!ready || !user) return;
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function load() {
+      setLoading(true);
+      const [{ data: profileRow }, { data: orderRows }, { data: galleryRows }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+        supabase.from("orders").select(ORDER_ITEMS_SELECT).order("created_at", { ascending: false }),
+        supabase.from("galleries").select("id, nom, categorie, date, token, photos(src)").eq("visibilite", "privee"),
+      ]);
+      if (cancelled) return;
+      setProfile(profileRow || { id: user.id, email: user.email, first_name: "", last_name: "", phone: "" });
+      setOrders(orderRows || []);
+      setGalleries(galleryRows || []);
+      setLoading(false);
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, user]);
+
+  const handleDownload = async (orderItemId) => {
+    setDownloading(orderItemId);
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc("consume_download", { p_order_item_id: orderItemId });
+    setDownloading(null);
+    if (error) {
+      toast("Ce téléchargement n'est pas disponible.");
+      return;
+    }
+    const result = Array.isArray(data) ? data[0] : data;
+    if (result?.src) {
+      const a = document.createElement("a");
+      a.href = result.src;
+      a.download = "";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    setOrders((prev) =>
+      prev.map((o) => ({
+        ...o,
+        order_items: (o.order_items || []).map((it) =>
+          it.id === orderItemId ? { ...it, telechargements_restants: result?.restants ?? it.telechargements_restants } : it
+        ),
+      }))
+    );
+  };
+
+  if (!ready || loading || !profile) {
+    return <div className="min-h-dvh bg-paper px-5 pb-20 pt-28 text-[#111111] sm:px-10 md:px-14" />;
+  }
 
   return (
     <div className="min-h-dvh bg-paper px-5 pb-20 pt-28 text-[#111111] sm:px-10 md:px-14">
@@ -193,10 +329,10 @@ export default function MonEspace() {
           </nav>
 
           <div className="min-w-0">
-            {tab === "dl" && <Downloads db={db} />}
-            {tab === "cmd" && <Orders db={db} />}
-            {tab === "gal" && <PrivateGalleries db={db} />}
-            {tab === "info" && <Infos db={db} toast={toast} />}
+            {tab === "dl" && <Downloads orders={orders} onDownload={handleDownload} downloading={downloading} />}
+            {tab === "cmd" && <Orders orders={orders} />}
+            {tab === "gal" && <PrivateGalleries galleries={galleries} />}
+            {tab === "info" && <Infos profile={profile} toast={toast} onSaved={setProfile} />}
           </div>
         </div>
       </div>

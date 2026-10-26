@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import NavLink from "./NavLink";
+import { useCart } from "../lib/cartStore";
+import { useSupabaseUser } from "../lib/useSupabaseUser";
+import { createClient } from "../lib/supabase/browserClient";
 
 const DRAWER_EASING = "cubic-bezier(.32,.72,0,1)";
 
@@ -40,11 +43,23 @@ function QtyStepper({ qty, onDec, onInc }) {
 
 // même tiroir que la boutique dans la maquette de référence : glisse depuis
 // la droite en desktop, depuis le bas en mobile
-export default function CartPanel({ open, onClose }) {
-  const [lines, setLines] = useState([]);
+export default function CartPanel({ open, onClose, onNeedAccount }) {
+  const { lines, setQty, removeFromCart, clearCart } = useCart();
+  const { user } = useSupabaseUser();
+  const [ordering, setOrdering] = useState(false);
+  const [orderError, setOrderError] = useState(null);
+  const [ordered, setOrdered] = useState(false);
   const bgRef = useRef(null);
   const panelRef = useRef(null);
   const closeBtnRef = useRef(null);
+
+  // réinitialise l'état de confirmation/erreur à la fermeture, quel que
+  // soit le déclencheur (fond, croix, Échap, bouton "Fermer")
+  const handleClose = () => {
+    setOrdered(false);
+    setOrderError(null);
+    onClose();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -69,7 +84,7 @@ export default function CartPanel({ open, onClose }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
@@ -78,15 +93,35 @@ export default function CartPanel({ open, onClose }) {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [open, onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open) return null;
 
-  const dec = (key) =>
-    setLines((ls) => ls.map((l) => (l.key === key ? { ...l, qty: Math.max(1, l.qty - 1) } : l)));
-  const inc = (key) =>
-    setLines((ls) => ls.map((l) => (l.key === key ? { ...l, qty: Math.min(20, l.qty + 1) } : l)));
-  const remove = (key) => setLines((ls) => ls.filter((l) => l.key !== key));
+  const dec = (key, qty) => setQty(key, qty - 1);
+  const inc = (key, qty) => setQty(key, qty + 1);
+  const remove = (key) => removeFromCart(key);
+
+  const handleOrder = async () => {
+    if (!user) {
+      handleClose();
+      onNeedAccount?.();
+      return;
+    }
+    setOrderError(null);
+    setOrdering(true);
+    const supabase = createClient();
+    const { error } = await supabase.rpc("create_order", {
+      p_items: lines.map((l) => ({ photo_id: l.photoId, qty: l.qty })),
+    });
+    setOrdering(false);
+    if (error) {
+      setOrderError("La commande n'a pas pu être envoyée. Réessayez dans un instant.");
+      return;
+    }
+    clearCart();
+    setOrdered(true);
+  };
 
   const cartCount = lines.reduce((n, l) => n + l.qty, 0);
   const cartTotal = lines.reduce((n, l) => n + l.qty * l.prix, 0);
@@ -95,7 +130,7 @@ export default function CartPanel({ open, onClose }) {
     <div className="fixed inset-0 z-[55]">
       <div
         ref={bgRef}
-        onClick={onClose}
+        onClick={handleClose}
         aria-hidden="true"
         className="absolute inset-0 bg-[rgba(10,10,10,0.5)]"
         style={{ opacity: 0 }}
@@ -116,7 +151,7 @@ export default function CartPanel({ open, onClose }) {
           <button
             ref={closeBtnRef}
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Fermer"
             className="flex h-11 w-11 items-center justify-center border-0 bg-transparent text-lg text-[#111111] transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-90"
           >
@@ -125,7 +160,21 @@ export default function CartPanel({ open, onClose }) {
         </div>
 
         <div className="flex-1 overflow-y-auto overscroll-contain p-5">
-          {lines.length === 0 ? (
+          {ordered ? (
+            <div className="flex flex-col items-start gap-4 py-4">
+              <p className="m-0 text-lg font-medium">Commande envoyée !</p>
+              <p className="m-0 text-sm leading-relaxed" style={{ color: "#555" }}>
+                Théo vous confirme par e-mail la disponibilité, le délai et le paiement.
+              </p>
+              <button
+                type="button"
+                onClick={handleClose}
+                className="mt-1 inline-flex items-center gap-3 bg-accent px-6 py-4 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
+              >
+                Fermer
+              </button>
+            </div>
+          ) : lines.length === 0 ? (
             <div className="flex flex-col items-start gap-4 py-4">
               <p className="m-0 text-lg font-medium">Votre panier est vide.</p>
               <p className="m-0 text-sm leading-relaxed" style={{ color: "#555" }}>
@@ -133,7 +182,7 @@ export default function CartPanel({ open, onClose }) {
               </p>
               <NavLink
                 href="/galerie"
-                onClick={onClose}
+                onClick={handleClose}
                 className="mt-1 inline-flex items-center gap-3 bg-accent px-6 py-4 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
               >
                 Voir la galerie <span aria-hidden="true">→</span>
@@ -148,7 +197,7 @@ export default function CartPanel({ open, onClose }) {
               >
                 <div
                   className="h-16 w-16 bg-cover bg-center grayscale"
-                  style={{ background: "#e7e7e4", backgroundImage: l.thumb ? `url(${l.thumb})` : undefined }}
+                  style={{ background: "#e7e7e4", backgroundImage: l.src ? `url(${l.src})` : undefined }}
                 />
                 <div className="flex min-w-0 flex-col gap-2">
                   <div className="flex items-baseline justify-between gap-3">
@@ -160,10 +209,10 @@ export default function CartPanel({ open, onClose }) {
                     </span>
                   </div>
                   <span className="text-[13px]" style={{ color: "#555" }}>
-                    {l.format}, {euro(l.prix)} l&rsquo;unité
+                    Photo numérique, {euro(l.prix)} l&rsquo;unité
                   </span>
                   <div className="flex items-center justify-between gap-3">
-                    <QtyStepper qty={l.qty} onDec={() => dec(l.key)} onInc={() => inc(l.key)} />
+                    <QtyStepper qty={l.qty} onDec={() => dec(l.key, l.qty)} onInc={() => inc(l.key, l.qty)} />
                     <button
                       type="button"
                       onClick={() => remove(l.key)}
@@ -189,11 +238,14 @@ export default function CartPanel({ open, onClose }) {
                 {euro(cartTotal)}
               </span>
             </div>
+            {orderError && <p className="m-0 text-xs font-medium text-[#c0392b]">{orderError}</p>}
             <button
               type="button"
-              className="flex min-h-[52px] w-full items-center justify-center gap-3 border-0 bg-accent text-[15px] font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985]"
+              onClick={handleOrder}
+              disabled={ordering}
+              className="flex min-h-[52px] w-full items-center justify-center gap-3 border-0 bg-accent text-[15px] font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.985] disabled:opacity-60"
             >
-              Commander <span aria-hidden="true">→</span>
+              {ordering ? "Envoi…" : "Commander"} {!ordering && <span aria-hidden="true">→</span>}
             </button>
             <p className="m-0 text-xs leading-relaxed" style={{ color: "#555" }}>
               La commande est finalisée par e-mail : Théo vous confirme la disponibilité, le délai et le paiement.
