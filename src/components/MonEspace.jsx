@@ -178,26 +178,36 @@ function Infos({ profile, toast, onSaved }) {
       .update({ first_name: draft.prenom, last_name: draft.nom, phone: draft.tel })
       .eq("id", profile.id);
 
-    let emailChanged = false;
+    const newEmail = draft.email.trim();
+    const emailChanged = newEmail.toLowerCase() !== (profile.email || "").trim().toLowerCase();
     let emailError = null;
-    if (draft.email.trim() !== profile.email) {
-      emailChanged = true;
-      const { error } = await supabase.auth.updateUser({ email: draft.email.trim() });
+    if (emailChanged) {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
       emailError = error;
-      if (!error) await supabase.from("profiles").update({ email: draft.email.trim() }).eq("id", profile.id);
+      if (!error) await supabase.from("profiles").update({ email: newEmail }).eq("id", profile.id);
     }
 
     setSaving(false);
-    if (profileError || emailError) {
-      toast("Une erreur est survenue, réessayez.");
+    if (profileError) {
+      toast(`Erreur : ${profileError.message}`);
       return;
     }
-    onSaved({ ...profile, first_name: draft.prenom, last_name: draft.nom, phone: draft.tel, email: draft.email.trim() });
-    toast(
-      emailChanged
-        ? "Informations enregistrées. Vérifiez votre boîte mail pour confirmer le nouvel e-mail."
-        : "Informations enregistrées."
-    );
+    onSaved({
+      ...profile,
+      first_name: draft.prenom,
+      last_name: draft.nom,
+      phone: draft.tel,
+      email: emailChanged && !emailError ? newEmail : profile.email,
+    });
+    if (emailError) {
+      toast(`Informations enregistrées, mais l'e-mail n'a pas pu être changé : ${emailError.message}`);
+    } else {
+      toast(
+        emailChanged
+          ? "Informations enregistrées. Vérifiez votre boîte mail pour confirmer le nouvel e-mail."
+          : "Informations enregistrées."
+      );
+    }
   };
 
   return (
