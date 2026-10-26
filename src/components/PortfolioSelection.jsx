@@ -47,7 +47,7 @@ export default function PortfolioSelection({ category, content = {} }) {
   const items = layoutItems(sel.photos);
 
   return (
-    <div className="bg-paper text-[#111111]">
+    <div className="animate-fade-in bg-paper text-[#111111]">
       <div className="relative min-h-[420px] overflow-hidden bg-[#151515] text-paper md:h-[min(78dvh,860px)]">
         <div
           aria-hidden="true"
