@@ -1,0 +1,109 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { supabaseAdmin } from "../../lib/supabaseAdmin";
+import { getAdminUser } from "../../lib/requireAdmin";
+
+const TOKEN_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+
+function slugify(nom) {
+  return nom
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function genToken() {
+  return Array.from({ length: 6 }, () => TOKEN_ALPHABET[Math.floor(Math.random() * TOKEN_ALPHABET.length)]).join("");
+}
+
+// étape 1 : crée la galerie et réserve, pour chaque photo, une URL signée
+// d'upload direct vers Supabase Storage — le fichier ne transite jamais par
+// le serveur Next.js (dont la limite de taille de requête, même augmentée,
+// reste inadaptée à plusieurs photos HD envoyées d'un coup sur Vercel)
+export async function prepareGalleryUpload({ nom, date, lieu, categorie, vis, photoCount }) {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, message: "Accès refusé." };
+  if (!nom?.trim() || !photoCount) return { ok: false, message: "Données manquantes." };
+
+  const base = slugify(nom) || "galerie";
+  let id = base;
+  let suffix = 1;
+  for (;;) {
+    const { data: existing } = await supabaseAdmin.from("galleries").select("id").eq("id", id).maybeSingle();
+    if (!existing) break;
+    suffix += 1;
+    id = `${base}-${suffix}`;
+  }
+
+  const token = vis === "privee" ? genToken() : null;
+
+  const { error: galError } = await supabaseAdmin.from("galleries").insert({
+    id,
+    nom: nom.trim(),
+    categorie,
+    lieu: lieu?.trim() || "",
+    date: date || new Date().toISOString().slice(0, 10),
+    visibilite: vis,
+    token,
+  });
+  if (galError) return { ok: false, message: galError.message };
+
+  const uploads = [];
+  for (let i = 0; i < photoCount; i++) {
+    const numero = i + 1;
+    const path = `${id}/${numero}.jpg`;
+
+    const [{ data: webSigned, error: webErr }, { data: origSigned, error: origErr }] = await Promise.all([
+      supabaseAdmin.storage.from("gallery-web").createSignedUploadUrl(path),
+      supabaseAdmin.storage.from("gallery-originals").createSignedUploadUrl(path),
+    ]);
+    if (webErr || origErr) {
+      await supabaseAdmin.from("galleries").delete().eq("id", id);
+      return { ok: false, message: (webErr || origErr).message };
+    }
+
+    uploads.push({ numero, path, webToken: webSigned.token, originalToken: origSigned.token });
+  }
+
+  return { ok: true, galleryId: id, token, uploads };
+}
+
+// étape 2 : une fois les fichiers envoyés directement depuis le navigateur
+// (voir src/lib/uploadToSignedUrl.js), enregistre les lignes photos
+export async function finalizeGalleryPhotos({ galleryId, photos, prix }) {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, message: "Accès refusé." };
+
+  const rows = photos.map(({ numero, path }) => ({
+    gallery_id: galleryId,
+    numero,
+    src: supabaseAdmin.storage.from("gallery-web").getPublicUrl(path).data.publicUrl,
+    original_path: path,
+    prix: prix || 15,
+  }));
+
+  const { error } = await supabaseAdmin.from("photos").insert(rows);
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/galerie");
+  return { ok: true };
+}
+
+// nettoyage si l'upload échoue en cours de route (fichiers déjà envoyés
+// orphelins compris, pour ne pas laisser traîner des galeries vides)
+export async function cancelGalleryUpload(galleryId) {
+  const admin = await getAdminUser();
+  if (!admin) return;
+
+  for (const bucket of ["gallery-web", "gallery-originals"]) {
+    const { data: files } = await supabaseAdmin.storage.from(bucket).list(galleryId);
+    if (files?.length) {
+      await supabaseAdmin.storage.from(bucket).remove(files.map((f) => `${galleryId}/${f.name}`));
+    }
+  }
+
+  await supabaseAdmin.from("galleries").delete().eq("id", galleryId);
+}

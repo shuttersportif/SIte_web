@@ -5,6 +5,10 @@ const nextConfig = {
   partialPrefetching: true,
   experimental: {
     agentUpgrade: "security",
+    serverActions: {
+      // upload de galeries entières (plusieurs photos HD) depuis l'admin
+      bodySizeLimit: "80mb",
+    },
   },
   turbopack: {
     rules: {

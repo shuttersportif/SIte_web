@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { buildAdminData, aggregate } from "../../lib/adminData";
 import { createClient } from "../../lib/supabase/browserClient";
 import { logout as logoutAction } from "../../app/admin/authActions";
+import { prepareGalleryUpload, finalizeGalleryPhotos, cancelGalleryUpload } from "../../app/admin/galleriesActions";
+import { uploadToSignedUrl } from "../../lib/uploadToSignedUrl";
 import Login from "./Login";
 import Sidebar from "./Sidebar";
 import Dashboard from "./Dashboard";
@@ -97,33 +99,39 @@ export default function AdminApp({ initialContent }) {
     }));
   };
 
-  const createGallery = ({ nom, date, lieu, categorie, vis, files, coverIdx }) => {
-    const id = nom
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-    const alpha = "abcdefghjkmnpqrstuvwxyz23456789";
-    const token = Array.from({ length: 6 }, () => alpha[Math.floor(Math.random() * alpha.length)]).join("");
+  const createGallery = async ({ nom, date, lieu, categorie, vis, prix, files, coverIdx }) => {
     const cover = files[coverIdx] || files[0];
     const ordered = [cover, ...files.filter((_, i) => i !== coverIdx)];
-    const gal = {
-      id: id || `galerie-${Date.now()}`,
-      nom,
-      categorie,
-      lieu,
-      date: date || new Date().toISOString().slice(0, 10),
-      photos: ordered.map((f, i) => ({ n: i + 1, src: f.url })),
-      vis,
-      token,
-      client: vis === "privee" ? null : null,
-      peak: 0,
-      visits: 0,
-    };
-    setDb((d) => ({ ...d, gals: [gal, ...d.gals] }));
+
+    const prepared = await prepareGalleryUpload({ nom, date, lieu, categorie, vis, photoCount: ordered.length });
+    if (!prepared.ok) return prepared;
+
+    try {
+      for (let i = 0; i < ordered.length; i++) {
+        const { path, webToken, originalToken } = prepared.uploads[i];
+        await Promise.all([
+          uploadToSignedUrl("gallery-web", path, webToken, ordered[i].file),
+          uploadToSignedUrl("gallery-originals", path, originalToken, ordered[i].file),
+        ]);
+      }
+    } catch (e) {
+      await cancelGalleryUpload(prepared.galleryId);
+      return { ok: false, message: "Échec de l'envoi des photos." };
+    }
+
+    const finalized = await finalizeGalleryPhotos({
+      galleryId: prepared.galleryId,
+      photos: prepared.uploads.map(({ numero, path }) => ({ numero, path })),
+      prix,
+    });
+    if (!finalized.ok) {
+      await cancelGalleryUpload(prepared.galleryId);
+      return finalized;
+    }
+
     setModal(null);
-    toast("Galerie créée.");
+    toast("Galerie créée — visible sur /galerie.");
+    return { ok: true };
   };
 
   const sendLink = ({ msg }) => {

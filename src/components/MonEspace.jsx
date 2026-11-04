@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSupabaseUser } from "../lib/useSupabaseUser";
 import { createClient } from "../lib/supabase/browserClient";
+import { consumeDownload } from "../app/mon-espace/downloadActions";
 
 const TABS = [
   ["dl", "Mes téléchargements"],
@@ -275,17 +276,15 @@ export default function MonEspace() {
 
   const handleDownload = async (orderItemId) => {
     setDownloading(orderItemId);
-    const supabase = createClient();
-    const { data, error } = await supabase.rpc("consume_download", { p_order_item_id: orderItemId });
+    const result = await consumeDownload(orderItemId);
     setDownloading(null);
-    if (error) {
-      toast("Ce téléchargement n'est pas disponible.");
+    if (!result.ok) {
+      toast(result.message);
       return;
     }
-    const result = Array.isArray(data) ? data[0] : data;
-    if (result?.src) {
+    if (result.url) {
       const a = document.createElement("a");
-      a.href = result.src;
+      a.href = result.url;
       a.download = "";
       document.body.appendChild(a);
       a.click();

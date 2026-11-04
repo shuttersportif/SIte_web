@@ -18,20 +18,22 @@ export default function NewGalleryModal({ onClose, onCreate }) {
   const [lieu, setLieu] = useState("");
   const [cat, setCat] = useState("cyclisme");
   const [vis, setVis] = useState("publique");
+  const [prix, setPrix] = useState(15);
   const [files, setFiles] = useState([]);
   const [coverIdx, setCoverIdx] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const [err, setErr] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const fileRef = useRef(null);
 
   const addFiles = (list) => {
     const imgs = Array.from(list || []).filter((f) => /^image\//.test(f.type));
     if (!imgs.length) return;
-    setFiles((fs) => [...fs, ...imgs.map((f) => ({ name: f.name, url: URL.createObjectURL(f) }))]);
+    setFiles((fs) => [...fs, ...imgs.map((f) => ({ name: f.name, url: URL.createObjectURL(f), file: f }))]);
     setErr("");
   };
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!nom.trim()) {
       setErr("Indiquez le nom de la course.");
@@ -41,7 +43,13 @@ export default function NewGalleryModal({ onClose, onCreate }) {
       setErr("Ajoutez au moins une photo.");
       return;
     }
-    onCreate({ nom: nom.trim(), date: date || null, lieu: lieu.trim(), categorie: cat, vis, files, coverIdx });
+    setErr("");
+    setSubmitting(true);
+    const result = await onCreate({ nom: nom.trim(), date: date || null, lieu: lieu.trim(), categorie: cat, vis, prix: Number(prix) || 15, files, coverIdx });
+    setSubmitting(false);
+    if (result && !result.ok) {
+      setErr(result.message || "Échec de la création de la galerie.");
+    }
   };
 
   return (
@@ -102,6 +110,18 @@ export default function NewGalleryModal({ onClose, onCreate }) {
               ))}
             </div>
           </div>
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] text-[#444444]">Prix par photo (€)</span>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={prix}
+              onChange={(e) => setPrix(e.target.value)}
+              className="border-0 border-b bg-transparent py-2 text-[15px] text-[#111111] outline-none focus:border-accent focus:shadow-[0_1px_0_#FF4F00]"
+              style={{ borderColor: "rgba(17,17,17,0.3)" }}
+            />
+          </label>
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] text-[#444444]">Visibilité</span>
             <div role="radiogroup" aria-label="Visibilité" className="flex" style={{ border: "1px solid rgba(17,17,17,0.16)" }}>
@@ -202,9 +222,10 @@ export default function NewGalleryModal({ onClose, onCreate }) {
           </button>
           <button
             type="submit"
-            className="min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
+            disabled={submitting}
+            className="min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97] disabled:opacity-60"
           >
-            Créer la galerie
+            {submitting ? "Envoi en cours…" : "Créer la galerie"}
           </button>
         </div>
       </form>
