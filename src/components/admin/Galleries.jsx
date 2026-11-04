@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { euro, fmt, num, catName } from "../../lib/adminData";
+import { fmt, num, catName } from "../../lib/adminData";
 
 const SITE_BASE = "https://theo-photographe.fr/galerie-privee/";
 
@@ -11,12 +11,9 @@ const CHIPS = [
   ["privee", "Privées"],
 ];
 
-export default function Galleries({ db, agg, onTogglePrivacy, onOpenNew, onOpenSend, toast }) {
+export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpenSend, onRegenToken, toast }) {
   const [filter, setFilter] = useState("all");
   const [copiedId, setCopiedId] = useState(null);
-  const [tokens, setTokens] = useState({});
-
-  const tokenFor = (g) => tokens[g.id] || g.token;
 
   const copy = (id, url) => {
     try {
@@ -28,21 +25,21 @@ export default function Galleries({ db, agg, onTogglePrivacy, onOpenNew, onOpenS
     setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 1600);
   };
 
-  const regen = (id) => {
-    const alpha = "abcdefghjkmnpqrstuvwxyz23456789";
-    const t = Array.from({ length: 6 }, () => alpha[Math.floor(Math.random() * alpha.length)]).join("");
-    setTokens((ts) => ({ ...ts, [id]: t }));
-    toast?.("Nouveau lien généré.");
+  const regen = async (id) => {
+    const result = await onRegenToken(id);
+    toast?.(result?.ok ? "Nouveau lien généré." : result?.message || "Échec.");
   };
 
-  const rows = db.gals.filter((g) => filter === "all" || g.vis === filter).sort((a, b) => b.date.localeCompare(a.date));
+  const rows = galleries
+    .filter((g) => filter === "all" || g.visibilite === filter)
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 text-[26px] font-medium tracking-[-0.02em]">Galeries</h1>
-          <span className="text-[13px] text-[#555555]">{num(db.gals.length)} galeries</span>
+          <span className="text-[13px] text-[#555555]">{num(galleries.length)} galeries</span>
         </div>
         <button
           type="button"
@@ -57,7 +54,7 @@ export default function Galleries({ db, agg, onTogglePrivacy, onOpenNew, onOpenS
       <div role="group" aria-label="Filtrer les galeries" className="flex flex-wrap gap-1.5">
         {CHIPS.map(([id, label]) => {
           const active = filter === id;
-          const count = id === "all" ? db.gals.length : db.gals.filter((g) => g.vis === id).length;
+          const count = id === "all" ? galleries.length : galleries.filter((g) => g.visibilite === id).length;
           return (
             <button
               key={id}
@@ -82,21 +79,20 @@ export default function Galleries({ db, agg, onTogglePrivacy, onOpenNew, onOpenS
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-4">
         {rows.map((g) => {
-          const stats = agg.byGal[g.id] || { sold: 0, rev: 0 };
-          const url = `${SITE_BASE}${tokenFor(g)}`;
-          const isPriv = g.vis === "privee";
+          const url = `${SITE_BASE}${g.token || ""}`;
+          const isPriv = g.visibilite === "privee";
           return (
             <article key={g.id} className="flex flex-col bg-[#fbfbfa]" style={{ border: "1px solid rgba(17,17,17,0.08)" }}>
               <div className="relative aspect-[3/2] overflow-hidden bg-[#e4e4e1]">
                 <div
                   className="absolute inset-0 bg-cover bg-center grayscale"
-                  style={{ backgroundImage: `url(${g.photos[0]?.src})` }}
+                  style={{ backgroundImage: g.cover ? `url(${g.cover})` : undefined }}
                 />
                 <span
                   className="absolute left-2.5 top-2.5 px-2 py-1 text-[11px] font-medium"
                   style={{ background: isPriv ? "#FF4F00" : "rgba(10,10,10,0.72)", color: isPriv ? "#0a0a0a" : "#f4f4f2" }}
                 >
-                  {num(g.visits)} visites
+                  {num(g.photoCount)} photo{g.photoCount > 1 ? "s" : ""}
                 </span>
               </div>
               <div className="flex flex-col gap-3.5 p-4.5">
@@ -106,26 +102,6 @@ export default function Galleries({ db, agg, onTogglePrivacy, onOpenNew, onOpenS
                     {fmt(g.date)} · {catName(g.categorie)}
                   </span>
                 </div>
-                <dl className="m-0 grid grid-cols-3 gap-2 py-3" style={{ borderTop: "1px solid rgba(17,17,17,0.08)", borderBottom: "1px solid rgba(17,17,17,0.08)" }}>
-                  <div className="flex flex-col gap-0.5">
-                    <dt className="text-[11px] text-[#555555]">Photos</dt>
-                    <dd className="m-0 text-[15px] font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {g.photos.length}
-                    </dd>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <dt className="text-[11px] text-[#555555]">Visites</dt>
-                    <dd className="m-0 text-[15px] font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {num(g.visits)}
-                    </dd>
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    <dt className="text-[11px] text-[#555555]">Ventes</dt>
-                    <dd className="m-0 text-[15px] font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
-                      {euro(stats.rev)}
-                    </dd>
-                  </div>
-                </dl>
 
                 <button
                   role="switch"

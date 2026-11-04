@@ -107,3 +107,60 @@ export async function cancelGalleryUpload(galleryId) {
 
   await supabaseAdmin.from("galleries").delete().eq("id", galleryId);
 }
+
+// liste pour l'onglet Galeries de l'admin — via la clé service_role pour
+// voir aussi les galeries privées (la policy RLS publique ne couvre que
+// visibilite = 'publique')
+export async function listGalleries() {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, message: "Accès refusé." };
+
+  const { data, error } = await supabaseAdmin
+    .from("galleries")
+    .select("id, nom, categorie, lieu, date, visibilite, token, photos(src, numero)")
+    .order("date", { ascending: false });
+  if (error) return { ok: false, message: error.message };
+
+  const galleries = data.map((g) => {
+    const sorted = [...g.photos].sort((a, b) => a.numero - b.numero);
+    return {
+      id: g.id,
+      nom: g.nom,
+      categorie: g.categorie,
+      lieu: g.lieu,
+      date: g.date,
+      visibilite: g.visibilite,
+      token: g.token,
+      photoCount: g.photos.length,
+      cover: sorted[0]?.src || null,
+    };
+  });
+
+  return { ok: true, galleries };
+}
+
+export async function toggleGalleryVisibility(galleryId, nextVisibilite) {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, message: "Accès refusé." };
+
+  const token = nextVisibilite === "privee" ? genToken() : null;
+  const { error } = await supabaseAdmin
+    .from("galleries")
+    .update({ visibilite: nextVisibilite, token })
+    .eq("id", galleryId);
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/galerie");
+  return { ok: true, token };
+}
+
+export async function regenerateGalleryToken(galleryId) {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, message: "Accès refusé." };
+
+  const token = genToken();
+  const { error } = await supabaseAdmin.from("galleries").update({ token }).eq("id", galleryId);
+  if (error) return { ok: false, message: error.message };
+
+  return { ok: true, token };
+}

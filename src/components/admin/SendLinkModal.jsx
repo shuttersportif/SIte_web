@@ -3,8 +3,7 @@
 import { useState } from "react";
 import ModalShell from "./ModalShell";
 
-export default function SendLinkModal({ db, galId, onClose, onSend }) {
-  const gal = db.gals.find((g) => g.id === galId);
+export default function SendLinkModal({ gal, clients, onClose, onSend }) {
   const [client, setClient] = useState("");
   const [msg, setMsg] = useState(
     `Bonjour,\n\nVoici le lien privé de vos photos${gal ? ` de « ${gal.nom} »` : ""}. Vous pouvez les consulter et les commander directement en ligne.\n\nÀ bientôt,\nThéo`
@@ -17,7 +16,7 @@ export default function SendLinkModal({ db, galId, onClose, onSend }) {
       setErr("Choisissez un client.");
       return;
     }
-    onSend({ galId, clientIdx: Number(client), msg });
+    onSend({ galId: gal?.id, clientIdx: Number(client), msg });
   };
 
   return (
@@ -38,7 +37,7 @@ export default function SendLinkModal({ db, galId, onClose, onSend }) {
             style={{ border: "1px solid rgba(17,17,17,0.2)", background: "#fbfbfa" }}
           >
             <option value="">Sélectionner…</option>
-            {db.clients.map((c) => (
+            {clients.map((c) => (
               <option key={c.i} value={c.i}>
                 {c.nom} · {c.email}
               </option>

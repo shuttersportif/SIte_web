@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { buildAdminData, aggregate } from "../../lib/adminData";
 import { createClient } from "../../lib/supabase/browserClient";
 import { logout as logoutAction } from "../../app/admin/authActions";
-import { prepareGalleryUpload, finalizeGalleryPhotos, cancelGalleryUpload } from "../../app/admin/galleriesActions";
+import {
+  prepareGalleryUpload,
+  finalizeGalleryPhotos,
+  cancelGalleryUpload,
+  listGalleries,
+  toggleGalleryVisibility,
+  regenerateGalleryToken,
+} from "../../app/admin/galleriesActions";
 import { uploadToSignedUrl } from "../../lib/uploadToSignedUrl";
 import Login from "./Login";
 import Sidebar from "./Sidebar";
@@ -27,6 +34,7 @@ export default function AdminApp({ initialContent }) {
   const [ready, setReady] = useState(false);
   const [view, setView] = useState("dash");
   const [db, setDb] = useState(null);
+  const [galleries, setGalleries] = useState([]);
   const [drawer, setDrawer] = useState(null);
   const [modal, setModal] = useState(null);
   const [toastMsg, setToastMsg] = useState(null);
@@ -49,6 +57,9 @@ export default function AdminApp({ initialContent }) {
       }
       setAuthed(true);
       setAdminEmail(session.user.email);
+      listGalleries().then((result) => {
+        if (result.ok) setGalleries(result.galleries);
+      });
     };
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -92,11 +103,29 @@ export default function AdminApp({ initialContent }) {
   };
   const resendOrder = () => {};
 
-  const togglePrivacy = (galId) => {
-    setDb((d) => ({
-      ...d,
-      gals: d.gals.map((g) => (g.id === galId ? { ...g, vis: g.vis === "privee" ? "publique" : "privee" } : g)),
-    }));
+  const loadGalleries = async () => {
+    const result = await listGalleries();
+    if (result.ok) setGalleries(result.galleries);
+  };
+
+  const togglePrivacy = async (galId) => {
+    const current = galleries.find((g) => g.id === galId);
+    if (!current) return;
+    const next = current.visibilite === "privee" ? "publique" : "privee";
+    const result = await toggleGalleryVisibility(galId, next);
+    if (!result.ok) {
+      toast(result.message);
+      return;
+    }
+    setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, visibilite: next, token: result.token } : g)));
+  };
+
+  const regenToken = async (galId) => {
+    const result = await regenerateGalleryToken(galId);
+    if (result.ok) {
+      setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, token: result.token } : g)));
+    }
+    return result;
   };
 
   const createGallery = async ({ nom, date, lieu, categorie, vis, prix, files, coverIdx }) => {
@@ -131,6 +160,7 @@ export default function AdminApp({ initialContent }) {
 
     setModal(null);
     toast("Galerie créée — visible sur /galerie.");
+    await loadGalleries();
     return { ok: true };
   };
 
@@ -156,11 +186,11 @@ export default function AdminApp({ initialContent }) {
           {view === "clients" && <Clients db={db} onOpenClient={openClient} />}
           {view === "gals" && (
             <Galleries
-              db={db}
-              agg={agg}
+              galleries={galleries}
               onTogglePrivacy={togglePrivacy}
               onOpenNew={() => setModal({ type: "new" })}
               onOpenSend={(galId) => setModal({ type: "send", galId })}
+              onRegenToken={regenToken}
               toast={toast}
             />
           )}
@@ -183,7 +213,14 @@ export default function AdminApp({ initialContent }) {
       />
 
       {modal?.type === "new" && <NewGalleryModal onClose={() => setModal(null)} onCreate={createGallery} />}
-      {modal?.type === "send" && <SendLinkModal db={db} galId={modal.galId} onClose={() => setModal(null)} onSend={sendLink} />}
+      {modal?.type === "send" && (
+        <SendLinkModal
+          gal={galleries.find((g) => g.id === modal.galId)}
+          clients={db.clients}
+          onClose={() => setModal(null)}
+          onSend={sendLink}
+        />
+      )}
 
       <Toast message={toastMsg} />
     </div>
