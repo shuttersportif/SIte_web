@@ -35,7 +35,7 @@ export default function Navbar() {
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
-  const { user } = useSupabaseUser();
+  const { user, isAdmin: isAdminUser } = useSupabaseUser();
 
   const isAdmin = pathname?.startsWith("/admin");
   const hasHero = pathname === "/";
@@ -154,6 +154,16 @@ export default function Navbar() {
                   >
                     Mes téléchargements
                   </NavLink>
+                  {isAdminUser && (
+                    <NavLink
+                      href="/admin"
+                      onClick={() => setMenuOpen(false)}
+                      className="block px-4 py-3 text-sm transition-colors duration-150 hover:bg-black/5"
+                      style={{ borderTop: "1px solid rgba(17,17,17,0.08)" }}
+                    >
+                      Panel admin
+                    </NavLink>
+                  )}
                   <button
                     type="button"
                     onClick={handleLogout}

@@ -1,16 +1,13 @@
 "use server";
 
-import { createClient } from "../../lib/supabase/serverClient";
 import { supabaseAdmin } from "../../lib/supabaseAdmin";
+import { getAdminUser } from "../../lib/requireAdmin";
 
-// réservé à l'admin : vérifie qu'une session Supabase valide existe avant de
+// réservé à l'admin : vérifie que l'utilisateur a bien le rôle admin avant de
 // lire/écrire via la clé service_role (qui ignore les RLS)
 async function requireAdminSession() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session?.user) throw new Error("Non authentifié");
+  const user = await getAdminUser();
+  if (!user) throw new Error("Accès refusé");
 }
 
 export async function listOrders() {

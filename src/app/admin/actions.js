@@ -1,14 +1,11 @@
 "use server";
 
 import { supabaseAdmin } from "../../lib/supabaseAdmin";
-import { createClient } from "../../lib/supabase/serverClient";
+import { getAdminUser } from "../../lib/requireAdmin";
 import { updateTag } from "next/cache";
 
 export async function saveContent(data) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAdminUser();
 
   if (!user) {
     return { ok: false, message: "Session expirée, reconnectez-vous." };

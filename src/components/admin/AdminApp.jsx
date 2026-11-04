@@ -32,11 +32,25 @@ export default function AdminApp({ initialContent }) {
   useEffect(() => {
     const supabase = createClient();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setAuthed(true);
-        setAdminEmail(session.user.email);
+    const checkAdmin = async (session) => {
+      if (!session?.user) {
+        setAuthed(false);
+        setAdminEmail("");
+        return;
       }
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", session.user.id).single();
+      if (profile?.role !== "admin") {
+        await supabase.auth.signOut();
+        setAuthed(false);
+        setAdminEmail("");
+        return;
+      }
+      setAuthed(true);
+      setAdminEmail(session.user.email);
+    };
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await checkAdmin(session);
       setReady(true);
       setDb(buildAdminData());
     });
@@ -44,8 +58,7 @@ export default function AdminApp({ initialContent }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setAuthed(!!session?.user);
-      setAdminEmail(session?.user?.email ?? "");
+      checkAdmin(session);
     });
 
     return () => subscription.unsubscribe();
