@@ -25,6 +25,7 @@ import Content from "./Content";
 import Legal from "./Legal";
 import Drawer from "./Drawer";
 import NewGalleryModal from "./NewGalleryModal";
+import EditGalleryModal from "./EditGalleryModal";
 import SendLinkModal from "./SendLinkModal";
 import Toast from "./Toast";
 
@@ -111,13 +112,20 @@ export default function AdminApp({ initialContent }) {
   const togglePrivacy = async (galId) => {
     const current = galleries.find((g) => g.id === galId);
     if (!current) return;
-    const next = current.visibilite === "privee" ? "publique" : "privee";
+    const previous = current.visibilite;
+    const next = previous === "privee" ? "publique" : "privee";
+
+    // optimiste : on bascule tout de suite dans l'UI, on revient en arrière
+    // si l'appel serveur échoue
+    setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, visibilite: next } : g)));
+
     const result = await toggleGalleryVisibility(galId, next);
     if (!result.ok) {
       toast(result.message);
+      setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, visibilite: previous } : g)));
       return;
     }
-    setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, visibilite: next, token: result.token } : g)));
+    setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, token: result.token } : g)));
   };
 
   const regenToken = async (galId) => {
@@ -191,6 +199,7 @@ export default function AdminApp({ initialContent }) {
               onOpenNew={() => setModal({ type: "new" })}
               onOpenSend={(galId) => setModal({ type: "send", galId })}
               onRegenToken={regenToken}
+              onEdit={(galId) => setModal({ type: "edit", galId })}
               toast={toast}
             />
           )}
@@ -213,6 +222,22 @@ export default function AdminApp({ initialContent }) {
       />
 
       {modal?.type === "new" && <NewGalleryModal onClose={() => setModal(null)} onCreate={createGallery} />}
+      {modal?.type === "edit" && (
+        <EditGalleryModal
+          galleryId={modal.galId}
+          onClose={() => setModal(null)}
+          onSaved={async () => {
+            setModal(null);
+            toast("Galerie mise à jour.");
+            await loadGalleries();
+          }}
+          onDeleted={async () => {
+            setModal(null);
+            toast("Galerie supprimée.");
+            await loadGalleries();
+          }}
+        />
+      )}
       {modal?.type === "send" && (
         <SendLinkModal
           gal={galleries.find((g) => g.id === modal.galId)}

@@ -11,7 +11,7 @@ const CHIPS = [
   ["privee", "Privées"],
 ];
 
-export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpenSend, onRegenToken, toast }) {
+export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpenSend, onRegenToken, onEdit, toast }) {
   const [filter, setFilter] = useState("all");
   const [copiedId, setCopiedId] = useState(null);
 
@@ -96,11 +96,21 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
                 </span>
               </div>
               <div className="flex flex-col gap-3.5 p-4.5">
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <h2 className="m-0 text-[15px] font-medium leading-tight" style={{ overflowWrap: "anywhere" }}>{g.nom}</h2>
-                  <span className="text-xs text-[#555555]">
-                    {fmt(g.date)} · {catName(g.categorie)}
-                  </span>
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <h2 className="m-0 text-[15px] font-medium leading-tight" style={{ overflowWrap: "anywhere" }}>{g.nom}</h2>
+                    <span className="text-xs text-[#555555]">
+                      {fmt(g.date)} · {catName(g.categorie)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onEdit(g.id)}
+                    className="flex-none px-2.5 py-1.5 text-xs text-[#111111]"
+                    style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
+                  >
+                    Modifier
+                  </button>
                 </div>
 
                 <button
