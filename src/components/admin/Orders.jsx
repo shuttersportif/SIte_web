@@ -90,7 +90,7 @@ export default function Orders() {
                   setFilter(id);
                   setLimit(25);
                 }}
-                className="inline-flex min-h-9 items-center gap-2 px-3 text-[13px] text-[#111111]"
+                className="cursor-pointer inline-flex min-h-9 items-center gap-2 px-3 text-[13px] text-[#111111]"
                 style={{
                   border: `1px solid ${active ? "#111111" : "rgba(17,17,17,0.2)"}`,
                   background: active ? "#efefec" : "transparent",
@@ -166,7 +166,7 @@ export default function Orders() {
                         type="button"
                         disabled={busyId === o.id}
                         onClick={() => changeStatus(o.id, "payee")}
-                        className="min-h-8 border-0 bg-accent px-2.5 text-xs font-medium text-black disabled:opacity-50"
+                        className="cursor-pointer min-h-8 border-0 bg-accent px-2.5 text-xs font-medium text-black disabled:opacity-50"
                       >
                         Marquer payée
                       </button>
@@ -176,7 +176,7 @@ export default function Orders() {
                         type="button"
                         disabled={busyId === o.id}
                         onClick={() => changeStatus(o.id, "rembourse")}
-                        className="min-h-8 px-2.5 text-xs text-[#111111] disabled:opacity-50"
+                        className="cursor-pointer min-h-8 px-2.5 text-xs text-[#111111] disabled:opacity-50"
                         style={{ border: "1px solid rgba(17,17,17,0.25)", background: "transparent" }}
                       >
                         Rembourser
@@ -194,7 +194,7 @@ export default function Orders() {
             <button
               type="button"
               onClick={() => setLimit((l) => l + 25)}
-              className="min-h-10 px-4 text-[13px] text-[#111111]"
+              className="cursor-pointer min-h-10 px-4 text-[13px] text-[#111111]"
               style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
             >
               Afficher 25 de plus ({left} restantes)

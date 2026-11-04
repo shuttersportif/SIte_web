@@ -63,14 +63,14 @@ export default function SendLinkModal({ gal, clients, onClose, onSend }) {
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 px-4.5 text-sm text-[#111111]"
+            className="cursor-pointer min-h-11 px-4.5 text-sm text-[#111111]"
             style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
           >
             Annuler
           </button>
           <button
             type="submit"
-            className="min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
+            className="cursor-pointer min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
           >
             Envoyer le lien
           </button>

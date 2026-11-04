@@ -102,7 +102,7 @@ export default function PortfolioSelection({ category, content = {} }) {
               style={{ "--ratio": it.ratio }}
             >
               <div
-                className="h-full w-full bg-cover bg-center grayscale"
+                className="h-full w-full bg-cover bg-center"
                 style={{ backgroundImage: `url(${sel.cover})` }}
               />
               <span

@@ -144,13 +144,13 @@ export default function AdminApp({ initialContent }) {
     if (!prepared.ok) return prepared;
 
     try {
-      for (let i = 0; i < ordered.length; i++) {
-        const { path, webToken, originalToken } = prepared.uploads[i];
-        await Promise.all([
+      // toutes les photos sont envoyées en parallèle plutôt qu'une par une
+      await Promise.all(
+        prepared.uploads.flatMap(({ path, webToken, originalToken }, i) => [
           uploadToSignedUrl("gallery-web", path, webToken, ordered[i].file),
           uploadToSignedUrl("gallery-originals", path, originalToken, ordered[i].file),
-        ]);
-      }
+        ])
+      );
     } catch (e) {
       await cancelGalleryUpload(prepared.galleryId);
       return { ok: false, message: "Échec de l'envoi des photos." };

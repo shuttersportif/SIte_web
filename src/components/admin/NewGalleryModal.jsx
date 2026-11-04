@@ -102,7 +102,7 @@ export default function NewGalleryModal({ onClose, onCreate }) {
                   role="radio"
                   aria-checked={cat === id}
                   onClick={() => setCat(id)}
-                  className="min-h-10 flex-1 whitespace-nowrap border-0 text-[13px] text-[#111111] transition-colors duration-150"
+                  className="cursor-pointer min-h-10 flex-1 whitespace-nowrap border-0 text-[13px] text-[#111111] transition-colors duration-150"
                   style={{ background: cat === id ? "#efefec" : "transparent", fontWeight: cat === id ? 500 : 400 }}
                 >
                   {label}
@@ -132,7 +132,7 @@ export default function NewGalleryModal({ onClose, onCreate }) {
                   role="radio"
                   aria-checked={vis === id}
                   onClick={() => setVis(id)}
-                  className="min-h-10 flex-1 border-0 text-[13px] text-[#111111] transition-colors duration-150"
+                  className="cursor-pointer min-h-10 flex-1 border-0 text-[13px] text-[#111111] transition-colors duration-150"
                   style={{ background: vis === id ? "#efefec" : "transparent", fontWeight: vis === id ? 500 : 400 }}
                 >
                   {label}
@@ -166,7 +166,7 @@ export default function NewGalleryModal({ onClose, onCreate }) {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="min-h-9 px-3.5 text-[13px] text-[#111111]"
+              className="cursor-pointer min-h-9 px-3.5 text-[13px] text-[#111111]"
               style={{ border: "1px solid rgba(17,17,17,0.3)", background: "#fbfbfa" }}
             >
               Parcourir…
@@ -191,7 +191,7 @@ export default function NewGalleryModal({ onClose, onCreate }) {
                     type="button"
                     onClick={() => setCoverIdx(i)}
                     aria-pressed={i === coverIdx}
-                    className="relative block aspect-square overflow-hidden border-0 bg-[#e4e4e1] p-0"
+                    className="cursor-pointer relative block aspect-square overflow-hidden border-0 bg-[#e4e4e1] p-0"
                     style={{ outline: i === coverIdx ? "2px solid #FF4F00" : "2px solid transparent", outlineOffset: 2 }}
                   >
                     <img src={f.url} alt="" draggable="false" className="block h-full w-full object-cover" />
@@ -215,7 +215,7 @@ export default function NewGalleryModal({ onClose, onCreate }) {
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 px-4.5 text-sm text-[#111111]"
+            className="cursor-pointer min-h-11 px-4.5 text-sm text-[#111111]"
             style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
           >
             Annuler
@@ -223,7 +223,7 @@ export default function NewGalleryModal({ onClose, onCreate }) {
           <button
             type="submit"
             disabled={submitting}
-            className="min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97] disabled:opacity-60"
+            className="cursor-pointer min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97] disabled:opacity-60"
           >
             {submitting ? "Envoi en cours…" : "Créer la galerie"}
           </button>

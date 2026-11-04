@@ -120,7 +120,7 @@ export default function Hero({ content }) {
         {DEFAULT_ITEMS.map((item) => (
           <div
             key={item.src}
-            className="absolute inset-0 animate-kenburns bg-cover bg-center grayscale"
+            className="absolute inset-0 animate-kenburns bg-cover bg-center"
             style={{
               backgroundImage: `url(${item.src})`,
               opacity: item.src === bgItem.src ? 1 : 0,

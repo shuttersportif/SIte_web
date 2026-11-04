@@ -30,7 +30,7 @@ export default function Sidebar({ view, onNavigate, adminEmail, onLogout }) {
               type="button"
               onClick={() => onNavigate(id)}
               aria-current={active ? "page" : undefined}
-              className="relative flex min-h-10 items-center gap-2.5 px-3 text-left text-sm transition-colors duration-150 hover:bg-white/[0.06]"
+              className="cursor-pointer relative flex min-h-10 items-center gap-2.5 px-3 text-left text-sm transition-colors duration-150 hover:bg-white/[0.06]"
               style={{ color: active ? "#f4f4f2" : "rgba(244,244,242,0.72)", background: active ? "rgba(244,244,242,0.06)" : "transparent" }}
             >
               <span
@@ -60,7 +60,7 @@ export default function Sidebar({ view, onNavigate, adminEmail, onLogout }) {
         <button
           type="button"
           onClick={onLogout}
-          className="min-h-9 self-start border-0 bg-transparent p-0 text-left text-[13px] underline underline-offset-4"
+          className="cursor-pointer min-h-9 self-start border-0 bg-transparent p-0 text-left text-[13px] underline underline-offset-4"
           style={{ color: "rgba(244,244,242,0.78)" }}
         >
           Se déconnecter

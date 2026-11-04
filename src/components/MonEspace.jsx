@@ -48,7 +48,7 @@ function Downloads({ orders, onDownload, downloading }) {
       {downloads.map((d) => (
         <article key={d.key} className="flex flex-col bg-[#fbfbfa]" style={{ border: "1px solid rgba(17,17,17,0.08)" }}>
           <div className="relative aspect-[4/3] overflow-hidden bg-[#e4e4e1]">
-            <div className="absolute inset-0 bg-cover bg-center grayscale" style={{ backgroundImage: `url(${d.src})` }} />
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${d.src})` }} />
           </div>
           <div className="flex flex-col gap-2 p-3.5">
             <span className="truncate text-[13px] font-medium">{d.galNom}</span>
@@ -126,7 +126,7 @@ function PrivateGalleries({ galleries }) {
       {galleries.map((g) => (
         <article key={g.id} className="flex flex-col bg-[#fbfbfa]" style={{ border: "1px solid rgba(17,17,17,0.08)" }}>
           <div className="relative aspect-[3/2] overflow-hidden bg-[#e4e4e1]">
-            <div className="absolute inset-0 bg-cover bg-center grayscale" style={{ backgroundImage: `url(${g.photos?.[0]?.src})` }} />
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${g.photos?.[0]?.src})` }} />
           </div>
           <div className="flex flex-col gap-1.5 p-4">
             <h2 className="m-0 text-[15px] font-medium leading-tight">{g.nom}</h2>

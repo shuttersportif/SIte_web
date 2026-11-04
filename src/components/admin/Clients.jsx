@@ -53,7 +53,7 @@ export default function Clients({ db, onOpenClient }) {
               key={c.i}
               type="button"
               onClick={() => onOpenClient(c.i)}
-              className="grid w-full grid-cols-[minmax(160px,1.3fr)_minmax(200px,1.6fr)_110px_120px_130px] items-center gap-4 border-0 border-b bg-transparent py-3 text-left transition-colors duration-150 hover:bg-[#efefec]"
+              className="cursor-pointer grid w-full grid-cols-[minmax(160px,1.3fr)_minmax(200px,1.6fr)_110px_120px_130px] items-center gap-4 border-0 border-b bg-transparent py-3 text-left transition-colors duration-150 hover:bg-[#efefec]"
               style={{ borderColor: "rgba(17,17,17,0.07)", minHeight: 52 }}
             >
               <span className="truncate font-medium">{c.nom}</span>

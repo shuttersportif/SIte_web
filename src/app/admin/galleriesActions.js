@@ -51,22 +51,26 @@ export async function prepareGalleryUpload({ nom, date, lieu, categorie, vis, ph
   });
   if (galError) return { ok: false, message: galError.message };
 
-  const uploads = [];
-  for (let i = 0; i < photoCount; i++) {
-    const numero = i + 1;
-    const path = `${id}/${numero}.jpg`;
+  // toutes les URLs signées sont demandées en parallèle plutôt que photo
+  // par photo, pour ne pas payer N allers-retours réseau l'un après l'autre
+  const results = await Promise.all(
+    Array.from({ length: photoCount }, (_, i) => i + 1).map(async (numero) => {
+      const path = `${id}/${numero}.jpg`;
+      const [{ data: webSigned, error: webErr }, { data: origSigned, error: origErr }] = await Promise.all([
+        supabaseAdmin.storage.from("gallery-web").createSignedUploadUrl(path),
+        supabaseAdmin.storage.from("gallery-originals").createSignedUploadUrl(path),
+      ]);
+      return { numero, path, webSigned, origSigned, error: webErr || origErr };
+    })
+  );
 
-    const [{ data: webSigned, error: webErr }, { data: origSigned, error: origErr }] = await Promise.all([
-      supabaseAdmin.storage.from("gallery-web").createSignedUploadUrl(path),
-      supabaseAdmin.storage.from("gallery-originals").createSignedUploadUrl(path),
-    ]);
-    if (webErr || origErr) {
-      await supabaseAdmin.from("galleries").delete().eq("id", id);
-      return { ok: false, message: (webErr || origErr).message };
-    }
-
-    uploads.push({ numero, path, webToken: webSigned.token, originalToken: origSigned.token });
+  const failed = results.find((r) => r.error);
+  if (failed) {
+    await supabaseAdmin.from("galleries").delete().eq("id", id);
+    return { ok: false, message: failed.error.message };
   }
+
+  const uploads = results.map((r) => ({ numero: r.numero, path: r.path, webToken: r.webSigned.token, originalToken: r.origSigned.token }));
 
   return { ok: true, galleryId: id, token, uploads };
 }
@@ -233,19 +237,21 @@ export async function prepareAddPhotos(galleryId, photoCount) {
     .limit(1);
   const start = (last?.[0]?.numero || 0) + 1;
 
-  const uploads = [];
-  for (let i = 0; i < photoCount; i++) {
-    const numero = start + i;
-    const path = `${galleryId}/${numero}.jpg`;
+  const results = await Promise.all(
+    Array.from({ length: photoCount }, (_, i) => start + i).map(async (numero) => {
+      const path = `${galleryId}/${numero}.jpg`;
+      const [{ data: webSigned, error: webErr }, { data: origSigned, error: origErr }] = await Promise.all([
+        supabaseAdmin.storage.from("gallery-web").createSignedUploadUrl(path),
+        supabaseAdmin.storage.from("gallery-originals").createSignedUploadUrl(path),
+      ]);
+      return { numero, path, webSigned, origSigned, error: webErr || origErr };
+    })
+  );
 
-    const [{ data: webSigned, error: webErr }, { data: origSigned, error: origErr }] = await Promise.all([
-      supabaseAdmin.storage.from("gallery-web").createSignedUploadUrl(path),
-      supabaseAdmin.storage.from("gallery-originals").createSignedUploadUrl(path),
-    ]);
-    if (webErr || origErr) return { ok: false, message: (webErr || origErr).message };
+  const failed = results.find((r) => r.error);
+  if (failed) return { ok: false, message: failed.error.message };
 
-    uploads.push({ numero, path, webToken: webSigned.token, originalToken: origSigned.token });
-  }
+  const uploads = results.map((r) => ({ numero: r.numero, path: r.path, webToken: r.webSigned.token, originalToken: r.origSigned.token }));
 
   return { ok: true, uploads };
 }

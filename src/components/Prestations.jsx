@@ -67,7 +67,7 @@ function PrestationsList({ services }) {
           {SERVICES.map((sv, i) => (
             <div
               key={i}
-              className="absolute inset-0 bg-cover bg-center grayscale"
+              className="absolute inset-0 bg-cover bg-center"
               style={{
                 backgroundImage: `url(${sv.src})`,
                 opacity: hoverIdx === i ? 1 : 0,
@@ -96,7 +96,7 @@ function PrestationsList({ services }) {
           >
             <div className="relative mb-[18px] aspect-video overflow-hidden bg-[#e7e7e4] lg:hidden">
               <div
-                className="absolute inset-0 bg-cover bg-center grayscale"
+                className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${sv.src})` }}
               />
               <span
@@ -130,7 +130,7 @@ export default function Prestations({ content }) {
       <div className="px-5 pb-[clamp(72px,12vh,140px)] pt-[clamp(16px,3vh,32px)] sm:px-10 md:px-14">
         <Reveal className="relative h-[clamp(220px,40vh,440px)] overflow-hidden bg-[#e7e7e4]">
           <div
-            className="absolute inset-0 bg-cover bg-center grayscale"
+            className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: "url(/Photo/voiture2.png)" }}
           />
           <span

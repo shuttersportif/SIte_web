@@ -118,7 +118,7 @@ export default function LatestAddedCard({ items = DEFAULT_ITEMS, onHoverChange, 
             }}
           >
             <span
-              className="absolute inset-0 bg-cover bg-center grayscale"
+              className="absolute inset-0 bg-cover bg-center"
               style={{
                 backgroundImage: item.src
                   ? `url(${item.src})`

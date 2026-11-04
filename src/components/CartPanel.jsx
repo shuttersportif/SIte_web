@@ -196,7 +196,7 @@ export default function CartPanel({ open, onClose, onNeedAccount }) {
                 style={{ borderColor: "rgba(17,17,17,0.1)" }}
               >
                 <div
-                  className="h-16 w-16 bg-cover bg-center grayscale"
+                  className="h-16 w-16 bg-cover bg-center"
                   style={{ background: "#e7e7e4", backgroundImage: l.src ? `url(${l.src})` : undefined }}
                 />
                 <div className="flex min-w-0 flex-col gap-2">

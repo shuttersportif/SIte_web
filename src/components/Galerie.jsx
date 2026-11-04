@@ -56,7 +56,7 @@ function GridPhoto({ photo, index, galleryId, titre }) {
       }}
     >
       <div
-        className="aspect-[4/3] w-full bg-cover bg-center grayscale transition-transform duration-[360ms] ease-[cubic-bezier(.23,1,.32,1)] group-hover:scale-[1.02]"
+        className="aspect-[4/3] w-full bg-cover bg-center transition-transform duration-[360ms] ease-[cubic-bezier(.23,1,.32,1)] group-hover:scale-[1.02]"
         style={{ backgroundImage: `url(${photo.src})` }}
       />
       <span

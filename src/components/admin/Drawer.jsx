@@ -18,7 +18,7 @@ function OrderBody({ db, order, onOpenClient, onOpenOrder, onRefund, onResend, t
         <button
           type="button"
           onClick={() => onOpenClient(order.client)}
-          className="self-start border-0 bg-transparent p-0 text-left text-[15px] font-medium text-[#111111] underline underline-offset-4"
+          className="cursor-pointer self-start border-0 bg-transparent p-0 text-left text-[15px] font-medium text-[#111111] underline underline-offset-4"
         >
           {client ? client.nom : "—"}
         </button>
@@ -77,7 +77,7 @@ function OrderBody({ db, order, onOpenClient, onOpenOrder, onRefund, onResend, t
             onResend(order.id);
             toast(`Liens de téléchargement renvoyés à ${client ? client.email : "—"}.`);
           }}
-          className="min-h-11 border-0 bg-ink px-4 text-sm text-paper transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98]"
+          className="cursor-pointer min-h-11 border-0 bg-ink px-4 text-sm text-paper transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98]"
         >
           Renvoyer les liens de téléchargement
         </button>
@@ -86,7 +86,7 @@ function OrderBody({ db, order, onOpenClient, onOpenOrder, onRefund, onResend, t
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="min-h-11 px-4 text-sm text-[#111111] transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98]"
+            className="cursor-pointer min-h-11 px-4 text-sm text-[#111111] transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98]"
             style={{ border: "1px solid rgba(17,17,17,0.3)", background: "transparent" }}
           >
             Rembourser
@@ -106,14 +106,14 @@ function OrderBody({ db, order, onOpenClient, onOpenOrder, onRefund, onResend, t
                   setConfirming(false);
                   toast("Commande remboursée.");
                 }}
-                className="min-h-10 border-0 bg-ink px-3.5 text-[13px] font-medium text-paper"
+                className="cursor-pointer min-h-10 border-0 bg-ink px-3.5 text-[13px] font-medium text-paper"
               >
                 Confirmer le remboursement
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
-                className="min-h-10 px-3.5 text-[13px] text-[#111111]"
+                className="cursor-pointer min-h-10 px-3.5 text-[13px] text-[#111111]"
                 style={{ border: "1px solid rgba(17,17,17,0.24)", background: "transparent" }}
               >
                 Annuler
@@ -178,7 +178,7 @@ function ClientBody({ db, clientIdx, onOpenOrder }) {
               key={o.id}
               type="button"
               onClick={() => onOpenOrder(o.id)}
-              className="grid min-h-[50px] grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3.5 border-0 border-t bg-transparent py-2 text-left transition-colors duration-150 hover:bg-[#efefec]"
+              className="cursor-pointer grid min-h-[50px] grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3.5 border-0 border-t bg-transparent py-2 text-left transition-colors duration-150 hover:bg-[#efefec]"
               style={{ borderColor: "rgba(17,17,17,0.08)" }}
             >
               <span className="flex min-w-0 flex-col gap-0.5">
@@ -245,7 +245,7 @@ export default function Drawer({ db, drawer, onClose, onOpenOrder, onOpenClient,
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="flex h-11 w-11 flex-none items-center justify-center border-0 bg-transparent text-2xl font-light leading-none text-[#111111] transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-90"
+            className="cursor-pointer flex h-11 w-11 flex-none items-center justify-center border-0 bg-transparent text-2xl font-light leading-none text-[#111111] transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-90"
           >
             ×
           </button>

@@ -99,7 +99,7 @@ export default function About({ content }) {
       <div className="relative min-h-[max(520px,calc(100dvh-56px))] overflow-hidden bg-ink text-paper">
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-cover grayscale"
+          className="absolute inset-0 bg-cover"
           style={{ backgroundImage: "url(/Photo/voiture2.png)", backgroundPosition: "50% 40%" }}
         />
         <span

@@ -59,7 +59,7 @@ export default function Settings({ toast }) {
           type="button"
           onClick={save}
           disabled={!dirty}
-          className="min-h-11 px-5 text-sm font-medium transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
+          className="cursor-pointer min-h-11 px-5 text-sm font-medium transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
           style={{
             border: 0,
             background: dirty ? "#FF4F00" : "rgba(17,17,17,0.12)",
@@ -84,7 +84,7 @@ export default function Settings({ toast }) {
             role="switch"
             aria-checked={set.remiseOn}
             onClick={() => setSet((s) => ({ ...s, remiseOn: !s.remiseOn }))}
-            className="flex min-h-10 items-center gap-3 self-start border-0 bg-transparent p-0 text-sm text-[#111111]"
+            className="cursor-pointer flex min-h-10 items-center gap-3 self-start border-0 bg-transparent p-0 text-sm text-[#111111]"
           >
             <span aria-hidden="true" className="relative h-[22px] w-10 rounded-full" style={{ background: set.remiseOn ? "#FF4F00" : "rgba(17,17,17,0.25)" }}>
               <span
@@ -124,7 +124,7 @@ export default function Settings({ toast }) {
         <div className="flex max-w-[620px] flex-col gap-4.5">
           <Field label="Texte du filigrane" type="text" value={set.filigrane} onChange={update("filigrane")} />
           <div className="relative aspect-video overflow-hidden bg-[#e4e4e1]">
-            <div className="absolute inset-0 bg-cover bg-center grayscale" style={{ backgroundImage: "url(/Photo/voiture.png)" }} />
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/Photo/voiture.png)" }} />
             <span
               className="pointer-events-none absolute bottom-3 right-3.5 select-none text-xs tracking-wide text-white/80"
               style={{ textShadow: "0 0 8px rgba(0,0,0,0.35)" }}

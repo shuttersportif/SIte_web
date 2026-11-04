@@ -358,7 +358,7 @@ const GalleryEngine = forwardRef(function GalleryEngine({ races, initialGlobalId
             }}
           >
             <div
-              className="absolute inset-0 bg-cover bg-center grayscale"
+              className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: `url(${m.photo.src})` }}
             />
             <span

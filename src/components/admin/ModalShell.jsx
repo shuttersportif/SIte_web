@@ -17,7 +17,7 @@ export default function ModalShell({ title, onClose, children }) {
             type="button"
             onClick={onClose}
             aria-label="Fermer"
-            className="flex h-11 w-11 items-center justify-center border-0 bg-transparent text-2xl font-light leading-none text-[#111111]"
+            className="cursor-pointer flex h-11 w-11 items-center justify-center border-0 bg-transparent text-2xl font-light leading-none text-[#111111]"
           >
             ×
           </button>

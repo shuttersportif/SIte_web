@@ -134,7 +134,7 @@ export default function Stats({ db, agg }) {
                 role="radio"
                 aria-checked={active}
                 onClick={() => setPeriod(id)}
-                className="min-h-[38px] whitespace-nowrap border-0 px-4 text-[13px] text-[#111111] transition-colors duration-150"
+                className="cursor-pointer min-h-[38px] whitespace-nowrap border-0 px-4 text-[13px] text-[#111111] transition-colors duration-150"
                 style={{ background: active ? "#efefec" : "transparent", fontWeight: active ? 500 : 400 }}
               >
                 {label}

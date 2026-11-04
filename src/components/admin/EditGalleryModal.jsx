@@ -91,13 +91,12 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
         return;
       }
       try {
-        for (let i = 0; i < newFiles.length; i++) {
-          const { path, webToken, originalToken } = prepared.uploads[i];
-          await Promise.all([
+        await Promise.all(
+          prepared.uploads.flatMap(({ path, webToken, originalToken }, i) => [
             uploadToSignedUrl("gallery-web", path, webToken, newFiles[i].file),
             uploadToSignedUrl("gallery-originals", path, originalToken, newFiles[i].file),
-          ]);
-        }
+          ])
+        );
       } catch {
         setSaving(false);
         setErr("Échec de l'envoi des nouvelles photos.");
@@ -186,7 +185,7 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
                   role="radio"
                   aria-checked={cat === id}
                   onClick={() => setCat(id)}
-                  className="min-h-10 flex-1 whitespace-nowrap border-0 text-[13px] text-[#111111] transition-colors duration-150"
+                  className="cursor-pointer min-h-10 flex-1 whitespace-nowrap border-0 text-[13px] text-[#111111] transition-colors duration-150"
                   style={{ background: cat === id ? "#efefec" : "transparent", fontWeight: cat === id ? 500 : 400 }}
                 >
                   {label}
@@ -220,7 +219,7 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
                     onClick={() => removePhoto(p)}
                     disabled={removingId === p.id}
                     aria-label={`Supprimer la photo ${p.numero}`}
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center border-0 bg-black/70 text-xs leading-none text-white disabled:opacity-50"
+                    className="cursor-pointer absolute right-1 top-1 flex h-6 w-6 items-center justify-center border-0 bg-black/70 text-xs leading-none text-white disabled:opacity-50"
                   >
                     {removingId === p.id ? "…" : "×"}
                   </button>
@@ -242,7 +241,7 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="min-h-9 px-3.5 text-[13px] text-[#111111]"
+              className="cursor-pointer min-h-9 px-3.5 text-[13px] text-[#111111]"
               style={{ border: "1px solid rgba(17,17,17,0.3)", background: "#fbfbfa" }}
             >
               Parcourir…
@@ -260,7 +259,7 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
                     type="button"
                     onClick={() => removeNewFile(f.url)}
                     aria-label="Retirer"
-                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center border-0 bg-black/70 text-xs leading-none text-white"
+                    className="cursor-pointer absolute right-1 top-1 flex h-6 w-6 items-center justify-center border-0 bg-black/70 text-xs leading-none text-white"
                   >
                     ×
                   </button>
@@ -281,7 +280,7 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
             type="button"
             onClick={removeGallery}
             disabled={deleting}
-            className="min-h-11 px-4 text-sm text-[#111111] disabled:opacity-60"
+            className="cursor-pointer min-h-11 px-4 text-sm text-[#111111] disabled:opacity-60"
             style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
           >
             {deleting ? "Suppression…" : "Supprimer la galerie"}
@@ -290,7 +289,7 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
             <button
               type="button"
               onClick={onClose}
-              className="min-h-11 px-4.5 text-sm text-[#111111]"
+              className="cursor-pointer min-h-11 px-4.5 text-sm text-[#111111]"
               style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
             >
               Annuler
@@ -298,7 +297,7 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
             <button
               type="submit"
               disabled={saving}
-              className="min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97] disabled:opacity-60"
+              className="cursor-pointer min-h-11 border-0 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97] disabled:opacity-60"
             >
               {saving ? "Enregistrement…" : "Enregistrer"}
             </button>

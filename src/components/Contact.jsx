@@ -82,7 +82,7 @@ export default function Contact({ content }) {
       <div className="relative min-h-[300px] overflow-hidden bg-[#151515] md:min-h-0">
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-cover bg-center grayscale"
+          className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url(/Photo/voiture.png)" }}
         />
         <div

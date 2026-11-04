@@ -78,7 +78,7 @@ export default function Dashboard({ db, onOpenOrder, onNavigate }) {
         <button
           type="button"
           onClick={() => onNavigate("stats")}
-          className="inline-flex min-h-10 items-center border-0 bg-transparent p-0 text-[13px] text-[#111111] underline underline-offset-4"
+          className="cursor-pointer inline-flex min-h-10 items-center border-0 bg-transparent p-0 text-[13px] text-[#111111] underline underline-offset-4"
         >
           Statistiques détaillées
         </button>
@@ -203,7 +203,7 @@ export default function Dashboard({ db, onOpenOrder, onNavigate }) {
           <button
             type="button"
             onClick={() => onNavigate("orders")}
-            className="border-0 bg-transparent p-0 text-[13px] text-[#111111] underline underline-offset-4"
+            className="cursor-pointer border-0 bg-transparent p-0 text-[13px] text-[#111111] underline underline-offset-4"
           >
             Toutes les commandes
           </button>
@@ -229,7 +229,7 @@ export default function Dashboard({ db, onOpenOrder, onNavigate }) {
                   key={o.id}
                   type="button"
                   onClick={() => onOpenOrder(o.id)}
-                  className="grid w-full grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.4fr)_120px_70px_100px_130px] items-center gap-4 border-0 border-b bg-transparent py-3 text-left transition-colors duration-150 hover:bg-[#efefec]"
+                  className="cursor-pointer grid w-full grid-cols-[minmax(150px,1.1fr)_minmax(150px,1.4fr)_120px_70px_100px_130px] items-center gap-4 border-0 border-b bg-transparent py-3 text-left transition-colors duration-150 hover:bg-[#efefec]"
                   style={{ borderColor: "rgba(17,17,17,0.07)", minHeight: 50 }}
                 >
                   <span className="font-medium" style={{ fontVariantNumeric: "tabular-nums" }}>

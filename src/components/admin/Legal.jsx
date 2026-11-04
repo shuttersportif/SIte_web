@@ -80,7 +80,7 @@ function DocEditor({ label, doc, onChange }) {
                 type="button"
                 onClick={() => removeSection(i)}
                 aria-label={`Supprimer la section « ${s.heading} »`}
-                className="flex h-9 w-9 flex-none items-center justify-center border-0 bg-transparent text-lg text-[#555555] hover:text-[#111111]"
+                className="cursor-pointer flex h-9 w-9 flex-none items-center justify-center border-0 bg-transparent text-lg text-[#555555] hover:text-[#111111]"
               >
                 ×
               </button>
@@ -100,7 +100,7 @@ function DocEditor({ label, doc, onChange }) {
       <button
         type="button"
         onClick={addSection}
-        className="self-start px-3 py-2 text-[13px] text-[#111111]"
+        className="cursor-pointer self-start px-3 py-2 text-[13px] text-[#111111]"
         style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
       >
         + Ajouter une section
@@ -155,7 +155,7 @@ export default function Legal({ initialContent, toast }) {
           type="button"
           onClick={save}
           disabled={!dirty || isPending}
-          className="min-h-11 px-5 text-sm font-medium transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
+          className="cursor-pointer min-h-11 px-5 text-sm font-medium transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
           style={{
             border: 0,
             background: dirty && !isPending ? "#FF4F00" : "rgba(17,17,17,0.12)",

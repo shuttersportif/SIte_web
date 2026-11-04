@@ -44,7 +44,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
         <button
           type="button"
           onClick={onOpenNew}
-          className="inline-flex min-h-11 items-center gap-2.5 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
+          className="cursor-pointer inline-flex min-h-11 items-center gap-2.5 bg-accent px-5 text-sm font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.97]"
         >
           <span aria-hidden="true" className="text-lg leading-none">+</span>
           Nouvelle galerie
@@ -61,7 +61,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
               type="button"
               aria-pressed={active}
               onClick={() => setFilter(id)}
-              className="inline-flex min-h-9 items-center gap-2 px-3 text-[13px] text-[#111111]"
+              className="cursor-pointer inline-flex min-h-9 items-center gap-2 px-3 text-[13px] text-[#111111]"
               style={{
                 border: `1px solid ${active ? "#111111" : "rgba(17,17,17,0.2)"}`,
                 background: active ? "#efefec" : "transparent",
@@ -85,7 +85,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
             <article key={g.id} className="flex flex-col bg-[#fbfbfa]" style={{ border: "1px solid rgba(17,17,17,0.08)" }}>
               <div className="relative aspect-[3/2] overflow-hidden bg-[#e4e4e1]">
                 <div
-                  className="absolute inset-0 bg-cover bg-center grayscale"
+                  className="absolute inset-0 bg-cover bg-center"
                   style={{ backgroundImage: g.cover ? `url(${g.cover})` : undefined }}
                 />
                 <span
@@ -106,7 +106,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
                   <button
                     type="button"
                     onClick={() => onEdit(g.id)}
-                    className="flex-none px-2.5 py-1.5 text-xs text-[#111111]"
+                    className="cursor-pointer flex-none px-2.5 py-1.5 text-xs text-[#111111]"
                     style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
                   >
                     Modifier
@@ -117,7 +117,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
                   role="switch"
                   aria-checked={isPriv}
                   onClick={() => onTogglePrivacy(g.id)}
-                  className="flex min-h-9 items-center gap-2.5 border-0 bg-transparent p-0 text-[13px] text-[#111111]"
+                  className="cursor-pointer flex min-h-9 items-center gap-2.5 border-0 bg-transparent p-0 text-[13px] text-[#111111]"
                 >
                   <span style={{ fontWeight: !isPriv ? 500 : 400, opacity: !isPriv ? 1 : 0.5 }}>Publique</span>
                   <span
@@ -142,7 +142,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
                       <button
                         type="button"
                         onClick={() => copy(g.id, url)}
-                        className="flex-none px-2.5 text-xs text-[#111111]"
+                        className="cursor-pointer flex-none px-2.5 text-xs text-[#111111]"
                         style={{ border: "1px solid rgba(17,17,17,0.24)", background: "#fbfbfa", minHeight: 30 }}
                       >
                         {copiedId === g.id ? "Copié !" : "Copier"}
@@ -152,7 +152,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
                       <button
                         type="button"
                         onClick={() => regen(g.id)}
-                        className="min-h-9 px-3 text-xs text-[#111111]"
+                        className="cursor-pointer min-h-9 px-3 text-xs text-[#111111]"
                         style={{ border: "1px solid rgba(17,17,17,0.2)", background: "transparent" }}
                       >
                         Générer un nouveau lien
@@ -160,7 +160,7 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
                       <button
                         type="button"
                         onClick={() => onOpenSend(g.id)}
-                        className="min-h-9 border-0 bg-ink px-3 text-xs text-paper"
+                        className="cursor-pointer min-h-9 border-0 bg-ink px-3 text-xs text-paper"
                       >
                         Envoyer au client
                       </button>

@@ -73,7 +73,7 @@ export default function Login({ onLogin }) {
         <button
           type="submit"
           disabled={isPending}
-          className="min-h-[50px] border-0 bg-accent text-[15px] font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98] disabled:opacity-60"
+          className="cursor-pointer min-h-[50px] border-0 bg-accent text-[15px] font-medium text-black transition-transform duration-150 ease-[cubic-bezier(.23,1,.32,1)] active:scale-[0.98] disabled:opacity-60"
         >
           {isPending ? "Connexion…" : "Se connecter"}
         </button>
