@@ -10,6 +10,7 @@ import { faBars, faBagShopping } from "@fortawesome/free-solid-svg-icons";
 import { faUser } from "@fortawesome/free-regular-svg-icons";
 import { useSupabaseUser } from "../lib/useSupabaseUser";
 import { createClient } from "../lib/supabase/browserClient";
+import { useCart } from "../lib/cartStore";
 
 function accountInitial(user) {
   const source = user?.user_metadata?.full_name?.trim() || user?.email || "?";
@@ -36,6 +37,9 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const { user, isAdmin: isAdminUser } = useSupabaseUser();
+  const { count } = useCart();
+  const [bump, setBump] = useState(false);
+  const prevCountRef = useRef(count);
 
   const isAdmin = pathname?.startsWith("/admin");
   const hasHero = pathname === "/";
@@ -52,6 +56,18 @@ export default function Navbar() {
     const id = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(id);
   }, []);
+
+  // déclenche la "bosse" uniquement quand le nombre d'articles augmente
+  // (pas au retrait, ni au premier rendu où prevCountRef vaut déjà count)
+  useEffect(() => {
+    if (count > prevCountRef.current) {
+      setBump(true);
+      const t = setTimeout(() => setBump(false), 320);
+      prevCountRef.current = count;
+      return () => clearTimeout(t);
+    }
+    prevCountRef.current = count;
+  }, [count]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -189,10 +205,31 @@ export default function Navbar() {
           <button
             type="button"
             onClick={() => setCartOpen(true)}
-            aria-label="Panier"
-            className="flex min-h-11 cursor-pointer items-center justify-center border-0 bg-transparent text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
+            aria-label={`Panier${count > 0 ? ` (${count} article${count > 1 ? "s" : ""})` : ""}`}
+            className="relative flex min-h-11 cursor-pointer items-center justify-center border-0 bg-transparent text-base opacity-80 transition-opacity duration-150 hover:opacity-100"
           >
-            <FontAwesomeIcon icon={faBagShopping} />
+            <span
+              className="inline-block"
+              style={{
+                transform: bump ? "scale(1.22)" : "scale(1)",
+                transition: "transform 220ms cubic-bezier(.34,1.56,.64,1)",
+              }}
+            >
+              <FontAwesomeIcon icon={faBagShopping} />
+            </span>
+            {count > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute right-0 top-0.5 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold leading-none text-black"
+                style={{
+                  fontVariantNumeric: "tabular-nums",
+                  transform: bump ? "scale(1.15)" : "scale(1)",
+                  transition: "transform 220ms cubic-bezier(.34,1.56,.64,1)",
+                }}
+              >
+                {count > 99 ? "99+" : count}
+              </span>
+            )}
           </button>
         </div>
 
