@@ -300,6 +300,14 @@ export default function MonEspace() {
     );
   };
 
+  if (ready && !user) {
+    return (
+      <div className="flex min-h-dvh flex-col items-center justify-center gap-3 bg-paper px-5 text-center text-[#111111]">
+        <p className="m-0 text-sm">Vous devez être connecté pour accéder à votre espace.</p>
+      </div>
+    );
+  }
+
   if (!ready || loading || !profile) {
     return <div className="min-h-dvh bg-paper px-5 pb-20 pt-28 text-[#111111] sm:px-10 md:px-14" />;
   }

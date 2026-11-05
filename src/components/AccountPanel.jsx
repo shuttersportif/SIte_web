@@ -70,7 +70,11 @@ function LoginForm({ onSubmitted }) {
     });
     setSubmitting(false);
     if (error) {
-      setErrors({ password: "E-mail ou mot de passe incorrect." });
+      const unconfirmed = error.code === "email_not_confirmed" || /email.*not.*confirm/i.test(error.message || "");
+      const message = unconfirmed
+        ? "Confirmez votre e-mail avant de vous connecter : consultez le lien reçu lors de votre inscription."
+        : "E-mail ou mot de passe incorrect.";
+      setErrors({ password: message });
       return;
     }
     onSubmitted();
@@ -150,6 +154,7 @@ function SignupForm({ onSubmitted }) {
   const [errors, setErrors] = useState({});
   const [focus, setFocus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmSent, setConfirmSent] = useState(false);
 
   const onField = (name) => (e) => {
     const value = e.target.value;
@@ -173,7 +178,7 @@ function SignupForm({ onSubmitted }) {
     setSubmitting(true);
     const supabase = createClient();
     const fullName = `${form.prenom.trim()} ${form.nom.trim()}`.trim();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: form.email.trim(),
       password: form.password,
       options: { data: { full_name: fullName, first_name: form.prenom.trim(), last_name: form.nom.trim() } },
@@ -183,8 +188,27 @@ function SignupForm({ onSubmitted }) {
       setErrors({ email: error.message === "User already registered" ? "Cet e-mail est déjà utilisé." : error.message });
       return;
     }
+    // si la confirmation par e-mail est activée côté Supabase, signUp()
+    // réussit sans créer de session : rediriger vers /mon-espace donnerait
+    // une page blanche (personne n'y est connecté tant que le lien reçu par
+    // e-mail n'est pas cliqué)
+    if (!data.session) {
+      setConfirmSent(true);
+      return;
+    }
     onSubmitted();
   };
+
+  if (confirmSent) {
+    return (
+      <div className="flex flex-col gap-3 text-sm leading-relaxed text-[#111111]">
+        <p className="m-0">
+          Compte créé. Un e-mail de confirmation vient de vous être envoyé — cliquez sur le lien qu&rsquo;il contient pour
+          activer votre compte, puis connectez-vous.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">

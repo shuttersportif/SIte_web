@@ -115,17 +115,27 @@ export default function AdminApp({ initialContent }) {
     const previous = current.visibilite;
     const next = previous === "privee" ? "publique" : "privee";
 
+    let pin = null;
+    if (next === "privee") {
+      pin = prompt("Code PIN à 4 chiffres pour cette galerie privée :", "");
+      if (pin == null) return;
+      if (!/^\d{4}$/.test(pin)) {
+        toast("Le code PIN doit comporter 4 chiffres.");
+        return;
+      }
+    }
+
     // optimiste : on bascule tout de suite dans l'UI, on revient en arrière
     // si l'appel serveur échoue
     setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, visibilite: next } : g)));
 
-    const result = await toggleGalleryVisibility(galId, next);
+    const result = await toggleGalleryVisibility(galId, next, pin);
     if (!result.ok) {
       toast(result.message);
       setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, visibilite: previous } : g)));
       return;
     }
-    setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, token: result.token } : g)));
+    setGalleries((gs) => gs.map((g) => (g.id === galId ? { ...g, token: result.token, pin } : g)));
   };
 
   const regenToken = async (galId) => {
@@ -136,11 +146,11 @@ export default function AdminApp({ initialContent }) {
     return result;
   };
 
-  const createGallery = async ({ nom, date, lieu, categorie, vis, prix, files, coverIdx }) => {
+  const createGallery = async ({ nom, date, lieu, categorie, vis, pin, prix, files, coverIdx }) => {
     const cover = files[coverIdx] || files[0];
     const ordered = [cover, ...files.filter((_, i) => i !== coverIdx)];
 
-    const prepared = await prepareGalleryUpload({ nom, date, lieu, categorie, vis, photoCount: ordered.length });
+    const prepared = await prepareGalleryUpload({ nom, date, lieu, categorie, vis, pin, photoCount: ordered.length });
     if (!prepared.ok) return prepared;
 
     try {

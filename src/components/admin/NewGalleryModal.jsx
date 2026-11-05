@@ -18,6 +18,7 @@ export default function NewGalleryModal({ onClose, onCreate }) {
   const [lieu, setLieu] = useState("");
   const [cat, setCat] = useState("cyclisme");
   const [vis, setVis] = useState("publique");
+  const [pin, setPin] = useState("");
   const [prix, setPrix] = useState(15);
   const [files, setFiles] = useState([]);
   const [coverIdx, setCoverIdx] = useState(0);
@@ -43,9 +44,13 @@ export default function NewGalleryModal({ onClose, onCreate }) {
       setErr("Ajoutez au moins une photo.");
       return;
     }
+    if (vis === "privee" && !/^\d{4}$/.test(pin)) {
+      setErr("Indiquez un code PIN à 4 chiffres pour une galerie privée.");
+      return;
+    }
     setErr("");
     setSubmitting(true);
-    const result = await onCreate({ nom: nom.trim(), date: date || null, lieu: lieu.trim(), categorie: cat, vis, prix: Number(prix) || 15, files, coverIdx });
+    const result = await onCreate({ nom: nom.trim(), date: date || null, lieu: lieu.trim(), categorie: cat, vis, pin, prix: Number(prix) || 15, files, coverIdx });
     setSubmitting(false);
     if (result && !result.ok) {
       setErr(result.message || "Échec de la création de la galerie.");
@@ -141,6 +146,21 @@ export default function NewGalleryModal({ onClose, onCreate }) {
             </div>
           </div>
         </div>
+
+        {vis === "privee" && (
+          <label className="flex min-w-0 flex-col gap-1.5 sm:w-[160px]">
+            <span className="text-[13px] text-[#444444]">Code PIN (4 chiffres)</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="border-0 border-b bg-transparent py-2 text-[15px] tracking-[0.3em] text-[#111111] outline-none focus:border-accent focus:shadow-[0_1px_0_#FF4F00]"
+              style={{ borderColor: "rgba(17,17,17,0.3)" }}
+            />
+          </label>
+        )}
 
         <div className="flex flex-col gap-2.5">
           <span className="text-[13px] text-[#444444]">Photos</span>

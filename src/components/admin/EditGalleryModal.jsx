@@ -16,6 +16,8 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
   const [date, setDate] = useState("");
   const [lieu, setLieu] = useState("");
   const [cat, setCat] = useState("cyclisme");
+  const [visibilite, setVisibilite] = useState("publique");
+  const [pin, setPin] = useState("");
   const [prix, setPrix] = useState(15);
   const [photos, setPhotos] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
@@ -38,6 +40,8 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
       setDate(result.gallery.date);
       setLieu(result.gallery.lieu);
       setCat(result.gallery.categorie);
+      setVisibilite(result.gallery.visibilite);
+      setPin(result.gallery.pin || "");
       setPrix(result.prix);
       setPhotos(result.photos);
       setLoading(false);
@@ -73,10 +77,22 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
       setErr("Indiquez le nom de la course.");
       return;
     }
+    if (visibilite === "privee" && !/^\d{4}$/.test(pin)) {
+      setErr("Le code PIN doit comporter 4 chiffres.");
+      return;
+    }
     setErr("");
     setSaving(true);
 
-    const metaResult = await updateGallery(galleryId, { nom: nom.trim(), date, lieu: lieu.trim(), categorie: cat, prix: Number(prix) || 15 });
+    const metaResult = await updateGallery(galleryId, {
+      nom: nom.trim(),
+      date,
+      lieu: lieu.trim(),
+      categorie: cat,
+      prix: Number(prix) || 15,
+      visibilite,
+      pin: visibilite === "privee" ? pin : null,
+    });
     if (!metaResult.ok) {
       setSaving(false);
       setErr(metaResult.message);
@@ -206,6 +222,21 @@ export default function EditGalleryModal({ galleryId, onClose, onSaved, onDelete
             />
           </label>
         </div>
+
+        {visibilite === "privee" && (
+          <label className="flex min-w-0 flex-col gap-1.5 sm:w-[160px]">
+            <span className="text-[13px] text-[#444444]">Code PIN (4 chiffres)</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              className="border-0 border-b bg-transparent py-2 text-[15px] tracking-[0.3em] text-[#111111] outline-none focus:border-accent focus:shadow-[0_1px_0_#FF4F00]"
+              style={{ borderColor: "rgba(17,17,17,0.3)" }}
+            />
+          </label>
+        )}
 
         <div className="flex flex-col gap-2.5">
           <span className="text-[13px] text-[#444444]">Photos ({photos.length})</span>

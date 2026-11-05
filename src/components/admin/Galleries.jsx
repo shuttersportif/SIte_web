@@ -148,6 +148,12 @@ export default function Galleries({ galleries, onTogglePrivacy, onOpenNew, onOpe
                         {copiedId === g.id ? "Copié !" : "Copier"}
                       </button>
                     </div>
+                    <div className="flex min-w-0 items-center gap-2 px-2.5" style={{ background: "#efefec", border: "1px solid rgba(17,17,17,0.08)", minHeight: 40 }}>
+                      <span className="text-xs text-[#555555]">Code PIN</span>
+                      <span className="flex-1 text-sm font-medium" style={{ fontVariantNumeric: "tabular-nums", letterSpacing: "0.2em" }}>
+                        {g.pin || "—"}
+                      </span>
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"

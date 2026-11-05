@@ -5,6 +5,7 @@ import { supabaseAdmin } from "../../lib/supabaseAdmin";
 import { getAdminUser } from "../../lib/requireAdmin";
 
 const TOKEN_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+const PIN_RE = /^\d{4}$/;
 
 function slugify(nom) {
   return nom
@@ -23,10 +24,13 @@ function genToken() {
 // d'upload direct vers Supabase Storage — le fichier ne transite jamais par
 // le serveur Next.js (dont la limite de taille de requête, même augmentée,
 // reste inadaptée à plusieurs photos HD envoyées d'un coup sur Vercel)
-export async function prepareGalleryUpload({ nom, date, lieu, categorie, vis, photoCount }) {
+export async function prepareGalleryUpload({ nom, date, lieu, categorie, vis, pin, photoCount }) {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, message: "Accès refusé." };
   if (!nom?.trim() || !photoCount) return { ok: false, message: "Données manquantes." };
+  if (vis === "privee" && !PIN_RE.test(pin || "")) {
+    return { ok: false, message: "Indiquez un code PIN à 4 chiffres pour une galerie privée." };
+  }
 
   const base = slugify(nom) || "galerie";
   let id = base;
@@ -48,6 +52,7 @@ export async function prepareGalleryUpload({ nom, date, lieu, categorie, vis, ph
     date: date || new Date().toISOString().slice(0, 10),
     visibilite: vis,
     token,
+    pin: vis === "privee" ? pin : null,
   });
   if (galError) return { ok: false, message: galError.message };
 
@@ -121,7 +126,7 @@ export async function listGalleries() {
 
   const { data, error } = await supabaseAdmin
     .from("galleries")
-    .select("id, nom, categorie, lieu, date, visibilite, token, photos(src, numero)")
+    .select("id, nom, categorie, lieu, date, visibilite, token, pin, photos(src, numero)")
     .order("date", { ascending: false });
   if (error) return { ok: false, message: error.message };
 
@@ -135,6 +140,7 @@ export async function listGalleries() {
       date: g.date,
       visibilite: g.visibilite,
       token: g.token,
+      pin: g.pin,
       photoCount: g.photos.length,
       cover: sorted[0]?.src || null,
     };
@@ -143,14 +149,17 @@ export async function listGalleries() {
   return { ok: true, galleries };
 }
 
-export async function toggleGalleryVisibility(galleryId, nextVisibilite) {
+export async function toggleGalleryVisibility(galleryId, nextVisibilite, pin) {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, message: "Accès refusé." };
+  if (nextVisibilite === "privee" && !PIN_RE.test(pin || "")) {
+    return { ok: false, message: "Indiquez un code PIN à 4 chiffres pour une galerie privée." };
+  }
 
   const token = nextVisibilite === "privee" ? genToken() : null;
   const { error } = await supabaseAdmin
     .from("galleries")
-    .update({ visibilite: nextVisibilite, token })
+    .update({ visibilite: nextVisibilite, token, pin: nextVisibilite === "privee" ? pin : null })
     .eq("id", galleryId);
   if (error) return { ok: false, message: error.message };
 
@@ -178,7 +187,7 @@ export async function getGalleryDetail(galleryId) {
 
   const { data, error } = await supabaseAdmin
     .from("galleries")
-    .select("id, nom, categorie, lieu, date, visibilite, token, photos(id, numero, src, prix)")
+    .select("id, nom, categorie, lieu, date, visibilite, token, pin, photos(id, numero, src, prix)")
     .eq("id", galleryId)
     .single();
   if (error) return { ok: false, message: error.message };
@@ -194,6 +203,7 @@ export async function getGalleryDetail(galleryId) {
       date: data.date,
       visibilite: data.visibilite,
       token: data.token,
+      pin: data.pin,
     },
     photos,
     prix: photos[0]?.prix ?? 15,
@@ -201,16 +211,20 @@ export async function getGalleryDetail(galleryId) {
 }
 
 // modifie les infos de la galerie et, si fourni, le prix de toutes ses
-// photos (prix unique par galerie côté admin)
-export async function updateGallery(galleryId, { nom, date, lieu, categorie, prix }) {
+// photos (prix unique par galerie côté admin) ; pin n'est appliqué que si
+// la galerie est privée
+export async function updateGallery(galleryId, { nom, date, lieu, categorie, prix, pin, visibilite }) {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, message: "Accès refusé." };
   if (!nom?.trim()) return { ok: false, message: "Indiquez le nom de la course." };
+  if (visibilite === "privee" && pin != null && !PIN_RE.test(pin)) {
+    return { ok: false, message: "Le code PIN doit comporter 4 chiffres." };
+  }
 
-  const { error: galError } = await supabaseAdmin
-    .from("galleries")
-    .update({ nom: nom.trim(), date, lieu: lieu?.trim() || "", categorie })
-    .eq("id", galleryId);
+  const update = { nom: nom.trim(), date, lieu: lieu?.trim() || "", categorie };
+  if (visibilite === "privee" && pin != null) update.pin = pin;
+
+  const { error: galError } = await supabaseAdmin.from("galleries").update(update).eq("id", galleryId);
   if (galError) return { ok: false, message: galError.message };
 
   if (prix != null) {
@@ -274,6 +288,34 @@ export async function deletePhoto(galleryId, photoId, numero) {
 
   revalidatePath("/galerie");
   return { ok: true };
+}
+
+// accès public à une galerie privée (voir src/app/galerie-privee/[token]) :
+// pas d'authentification requise, juste le token de l'URL + le code PIN
+// transmis au client par l'admin — via supabaseAdmin car la policy RLS
+// publique sur galleries ne couvre que visibilite = 'publique'
+export async function unlockPrivateGallery(token, pin) {
+  if (!token || !PIN_RE.test(pin || "")) return { ok: false, message: "Code PIN incorrect." };
+
+  const { data, error } = await supabaseAdmin
+    .from("galleries")
+    .select("id, nom, categorie, lieu, date, pin, photos(id, numero, src, prix)")
+    .eq("token", token)
+    .eq("visibilite", "privee")
+    .maybeSingle();
+
+  if (error || !data || data.pin !== pin) {
+    return { ok: false, message: "Code PIN incorrect." };
+  }
+
+  const photos = [...data.photos]
+    .sort((a, b) => a.numero - b.numero)
+    .map((p) => ({ id: p.id, src: p.src, prix: p.prix }));
+
+  return {
+    ok: true,
+    gallery: { id: data.id, nom: data.nom, categorie: data.categorie, lieu: data.lieu, date: data.date, photos },
+  };
 }
 
 // supprime entièrement une galerie : fichiers Storage puis ligne galleries
