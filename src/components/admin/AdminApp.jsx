@@ -201,7 +201,7 @@ export default function AdminApp({ initialContent }) {
         <div className="mx-auto flex max-w-[1320px] flex-col gap-6">
           {view === "dash" && <Dashboard db={db} onOpenOrder={openOrder} onNavigate={setView} />}
           {view === "orders" && <Orders />}
-          {view === "clients" && <Clients db={db} onOpenClient={openClient} />}
+          {view === "clients" && <Clients />}
           {view === "gals" && (
             <Galleries
               galleries={galleries}

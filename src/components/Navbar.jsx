@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import NavLink from "./NavLink";
 import AccountPanel from "./AccountPanel";
 import CartPanel from "./CartPanel";
+import CartAddedToast from "./CartAddedToast";
 import { usePathname } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars, faBagShopping } from "@fortawesome/free-solid-svg-icons";
@@ -244,6 +245,7 @@ export default function Navbar() {
     </header>
     <AccountPanel open={accountOpen} onClose={() => setAccountOpen(false)} />
     <CartPanel open={cartOpen} onClose={() => setCartOpen(false)} onNeedAccount={() => setAccountOpen(true)} />
+    <CartAddedToast />
     </>
   );
 }

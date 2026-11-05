@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "theo-cart-v1";
 const listeners = new Set();
+const addedListeners = new Set();
 
 function readStorage() {
   if (typeof window === "undefined") return [];
@@ -32,6 +33,15 @@ export function addToCart({ photoId, galleryId, src, titre, prix }) {
   }
   items = [...items];
   writeStorage();
+  addedListeners.forEach((cb) => cb(titre));
+}
+
+// écoute les ajouts au panier, d'où qu'ils viennent (Galerie, galerie
+// privée, etc.), pour afficher un toast de confirmation sans avoir à le
+// câbler dans chaque bouton "Ajouter au panier"
+export function onCartAdd(cb) {
+  addedListeners.add(cb);
+  return () => addedListeners.delete(cb);
 }
 
 export function setQty(photoId, qty) {
