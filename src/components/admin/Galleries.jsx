@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { fmt, num, catName } from "../../lib/adminData";
 
-const SITE_BASE = "https://theo-photographe.fr/galerie-privee/";
+// domaine du site réellement en cours d'utilisation (localhost en dev, le
+// vrai domaine en prod) plutôt qu'un nom codé en dur qui peut ne pas exister
+const SITE_BASE = typeof window !== "undefined" ? `${window.location.origin}/galerie-privee/` : "/galerie-privee/";
 
 const CHIPS = [
   ["all", "Toutes"],
